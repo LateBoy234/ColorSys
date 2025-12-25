@@ -1,0 +1,24 @@
+﻿<Window x:Class="ColorSys.WPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:value="clr-namespace:ColorSys.WPF.ValueRules"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ColorSys.WPF"
+         Title="{Binding Title}"
+        mc:Ignorable="d" Height="450" Width="800">
+    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+        <WrapPanel>
+            <Button Content="按钮 A" Width="80" Height="40" Margin="5"
+                    IsEnabled="{Binding CanA}"/>
+            <Button Content="按钮 B" Width="80" Height="40" Margin="5"
+                    IsEnabled="{Binding CanB}"/>
+            <Button Content="按钮 C" Width="80" Height="40" Margin="5"
+                    IsEnabled="{Binding CanC}"/>
+        </WrapPanel>
+        <Button Content="登录"  Command="{Binding LoginCommand}"
+                Width="80" Height="30" Margin="0,10"/>
+        <Button Content="注销"  Command="{Binding LogoutCommand}"
+                Width="80" Height="30"/>
+    </StackPanel>
+</Window>

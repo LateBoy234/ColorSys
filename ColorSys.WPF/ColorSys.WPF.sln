@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36623.8
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ColorSys.WPF", "ColorSys.WPF.csproj", "{16E8D2F6-D73C-4E61-8D0C-BE59C63513EC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ColorSys.Permission", "..\ColorSys.Permission\ColorSys.Permission.csproj", "{B09DC1B7-91A0-468D-B052-2F934A8872A7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ColorSys.Logger", "..\ColorSys.Logger\ColorSys.Logger.csproj", "{4FA88A62-9535-4E17-868A-2C383E6DFB92}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ColorSys.HardwareContract", "..\ColorSys.HardwareContract\ColorSys.HardwareContract.csproj", "{A59F0FFE-D773-4565-B449-98384C9223EC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ColorSys.HardwareImplementation", "..\ColorSys.HardwareImplementation\ColorSys.HardwareImplementation.csproj", "{E51CD47F-6C59-4ACB-8B86-EE34475E2FC9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ColorSys.Domain", "..\ColorSys.Domain\ColorSys.Domain.csproj", "{F14ED494-ACFF-47FD-8187-7948A6355DC6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{16E8D2F6-D73C-4E61-8D0C-BE59C63513EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16E8D2F6-D73C-4E61-8D0C-BE59C63513EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16E8D2F6-D73C-4E61-8D0C-BE59C63513EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16E8D2F6-D73C-4E61-8D0C-BE59C63513EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B09DC1B7-91A0-468D-B052-2F934A8872A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B09DC1B7-91A0-468D-B052-2F934A8872A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B09DC1B7-91A0-468D-B052-2F934A8872A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B09DC1B7-91A0-468D-B052-2F934A8872A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4FA88A62-9535-4E17-868A-2C383E6DFB92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FA88A62-9535-4E17-868A-2C383E6DFB92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FA88A62-9535-4E17-868A-2C383E6DFB92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FA88A62-9535-4E17-868A-2C383E6DFB92}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A59F0FFE-D773-4565-B449-98384C9223EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A59F0FFE-D773-4565-B449-98384C9223EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A59F0FFE-D773-4565-B449-98384C9223EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A59F0FFE-D773-4565-B449-98384C9223EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E51CD47F-6C59-4ACB-8B86-EE34475E2FC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E51CD47F-6C59-4ACB-8B86-EE34475E2FC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E51CD47F-6C59-4ACB-8B86-EE34475E2FC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E51CD47F-6C59-4ACB-8B86-EE34475E2FC9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F14ED494-ACFF-47FD-8187-7948A6355DC6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F14ED494-ACFF-47FD-8187-7948A6355DC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F14ED494-ACFF-47FD-8187-7948A6355DC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F14ED494-ACFF-47FD-8187-7948A6355DC6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4079DA4E-6647-4AC4-B556-CEA3783E25AF}
+	EndGlobalSection
+EndGlobal
