@@ -7,18 +7,31 @@
         xmlns:local="clr-namespace:ColorSys.WPF"
          Title="{Binding Title}"
         mc:Ignorable="d" Height="450" Width="800">
-    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-        <WrapPanel>
-            <Button Content="按钮 A" Width="80" Height="40" Margin="5"
-                    IsEnabled="{Binding CanA}"/>
-            <Button Content="按钮 B" Width="80" Height="40" Margin="5"
-                    IsEnabled="{Binding CanB}"/>
-            <Button Content="按钮 C" Width="80" Height="40" Margin="5"
-                    IsEnabled="{Binding CanC}"/>
-        </WrapPanel>
-        <Button Content="登录"  Command="{Binding LoginCommand}"
-                Width="80" Height="30" Margin="0,10"/>
-        <Button Content="注销"  Command="{Binding LogoutCommand}"
-                Width="80" Height="30"/>
-    </StackPanel>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Menu>
+            <MenuItem Header="用户管理">
+                <MenuItem Header="{DynamicResource S_Login}" Command="{Binding LoginCommand}"/>
+                <MenuItem Header="{DynamicResource S_Logout}" Command="{Binding LogoutCommand}"/>
+            </MenuItem>
+            <MenuItem Header="语言设置">
+                <MenuItem Header="{DynamicResource S_LangCN}" Command="{Binding LangCNCommand}"/>
+                <MenuItem Header="{DynamicResource S_LangUS}" Command="{Binding LangUSCommand}"/>
+            </MenuItem>
+        </Menu>
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <WrapPanel>
+                <Button Content="按钮 A" Width="80" Height="40" Margin="5"
+                  IsEnabled="{Binding CanA}"/>
+                <Button Content="按钮 B" Width="80" Height="40" Margin="5"
+                  IsEnabled="{Binding CanB}"/>
+                <Button Content="按钮 C" Width="80" Height="40" Margin="5"
+                  IsEnabled="{Binding CanC}"/>
+            </WrapPanel>
+        </StackPanel>
+    </Grid>
+  
 </Window>

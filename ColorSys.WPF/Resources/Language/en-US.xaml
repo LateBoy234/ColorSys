@@ -1,0 +1,10 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:s="clr-namespace:System;assembly=mscorlib">
+	
+	<s:String x:Key="S_Login">Login</s:String>
+	<s:String x:Key="S_Logout">Login Out</s:String>
+	<s:String x:Key="S_LangCN">Chinese</s:String>
+	<s:String x:Key="S_LangUS">English</s:String>
+</ResourceDictionary>
+

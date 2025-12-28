@@ -20,25 +20,11 @@ namespace ColorSys.Permission
     /// </summary>
     public partial class LoginWindow : Window
     {
-        private readonly IAuthService _auth;
-        public LoginWindow(IAuthService auth)
+        public LoginWindow()
         {
             InitializeComponent();
-            _auth = auth;
         }
 
-        private  void BtnOk_Click(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is LoginViewModel vm)
-            {
-                vm.Password = tb_Pwd.Password;
-                // 如果登录成功（无异常），就关闭窗口并返回 DialogResult=true
-                if (_auth.CurrentUser is not null)
-                    DialogResult = true;   // 关闭窗口并返回 true
-            }
-        }
-
-        private void BtnCancel_Click(object sender, RoutedEventArgs e) => DialogResult = false;
 
     }
 }

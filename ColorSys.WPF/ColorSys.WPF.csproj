@@ -9,6 +9,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Page Remove="Resources\Language\en-US.xaml" />
+    <Page Remove="Resources\Language\zh-CN.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Resources\Language\zh-CN.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ColorSys.Permission\ColorSys.Permission.csproj" />
   </ItemGroup>
 
@@ -16,6 +25,15 @@
     <PackageReference Include="Autofac" Version="9.0.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Language\en-US.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Resource>
+    <Resource Include="Resources\Language\zh-CN.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Resource>
   </ItemGroup>
 
 </Project>
