@@ -28,8 +28,10 @@
             <TextBox Text="{Binding ExpireMinutes}" MinWidth="80"/>
         </StackPanel>
         <StackPanel Orientation="Horizontal" Grid.Row="6" HorizontalAlignment="Right">
-            <Button Content="取消" Width="80" IsCancel="True" Click="BtnCancel_Click"/>
-            <Button Content="登录" Width="80" Margin="10,0,0,0" IsDefault="True" Click="BtnOk_Click" Command="{Binding LoginCommand}"/>
+            <Button Content="取消" Width="80" IsCancel="True" Command="{Binding LoginOutCommand}"
+                    CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}" IsDefault="True"/>
+            <Button Content="登录" Width="80" Margin="10,0,0,0"   Command="{Binding LoginCommand}"
+                    CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}" IsDefault="True"/>
         </StackPanel>
     </Grid>
 </Window>

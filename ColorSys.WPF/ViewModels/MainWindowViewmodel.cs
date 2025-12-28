@@ -43,22 +43,47 @@ namespace ColorSys.WPF.ViewModels
         [ObservableProperty]
         private bool _canC;
         #endregion
-
+       
         [ObservableProperty]
         private string _title;
 
-        [RelayCommand]
+        [RelayCommand(CanExecute=nameof(CanLogin))]
         private void Login()
         {
             _nav.ShowLoginDialog();
+            LoginCommand.NotifyCanExecuteChanged();
+            LogoutCommand.NotifyCanExecuteChanged();
+            LangUSCommand.NotifyCanExecuteChanged();    
+            langCNCommand.NotifyCanExecuteChanged();
         }
-
-        [RelayCommand]
+        private bool CanLogin()
+        {
+            return _auth.CurrentUser is null || _auth.IsExpired;
+        }
+        [RelayCommand(CanExecute=nameof(CanLoginOut))]
         private void Logout()
         {
             _auth.Logout();
+            LoginCommand.NotifyCanExecuteChanged();
+            LogoutCommand.NotifyCanExecuteChanged();
         }
 
+        private bool CanLoginOut()
+        {
+            return _auth.CurrentUser is not null && !_auth.IsExpired;
+        }
+
+        [RelayCommand]
+        private void LangCN()
+        {
+             App.ChangeLanguage("zh-CN");
+        }
+
+        [RelayCommand]
+        private void LangUS()
+        {
+            App.ChangeLanguage("en-US");
+        }
         private void RefreshPermissions()
         {
             var user = _auth.CurrentUser;

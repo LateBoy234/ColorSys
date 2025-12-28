@@ -2,6 +2,7 @@
 
 using Autofac;
 using ColorSys.WPF.ViewModels;
+using System.Globalization;
 using System.IO;
 using System.Windows;
 
@@ -17,7 +18,7 @@ namespace ColorSys.WPF
         protected override  void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-
+            ChangeLanguage("zh-CN");
             //全局异常处理，防止闪退
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             DispatcherUnhandledException += App_DispatcherUnhandledException;
@@ -28,6 +29,25 @@ namespace ColorSys.WPF
             main.Show();
         }
 
+        public static void ChangeLanguage(string cultureName)
+        {
+            var newDict = new ResourceDictionary
+            {
+                Source = new Uri($"pack://application:,,,/Colorsys.WPF;component/Resources/Language/{cultureName}.xaml",
+                        UriKind.Absolute)
+            };
+
+            // 找到旧的 Language 字典并删除
+            var oldDict = Application.Current.Resources.MergedDictionaries
+                              .FirstOrDefault(d =>
+                                  d.Source?.OriginalString.Contains("Language/") == true);
+            if (oldDict != null)
+                Application.Current.Resources.MergedDictionaries.Remove(oldDict);
+
+            Application.Current.Resources.MergedDictionaries.Add(newDict);
+        }
+
+        #region 防止异常闪退
         private void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
             //处理UI线程一场
@@ -37,7 +57,7 @@ namespace ColorSys.WPF
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            if(e.ExceptionObject is Exception ex)
+            if (e.ExceptionObject is Exception ex)
             {
                 HandleException(ex);
             }
@@ -47,7 +67,7 @@ namespace ColorSys.WPF
         {
             //做异常处理；记录日志，
             LogException(ex);
-          //  File.AppendAllLines()
+            //  File.AppendAllLines()
 
             MessageBox.Show("发生异常，请调试或联系管理员", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
@@ -57,6 +77,8 @@ namespace ColorSys.WPF
             string errmessage = $"{DateTime.Now}:{ex.Message}\n{ex.StackTrace}";
             File.AppendAllText("error.log", errmessage);
         }
+        #endregion
+
     }
 
 }

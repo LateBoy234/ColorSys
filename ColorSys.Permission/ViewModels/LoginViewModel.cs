@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace ColorSys.Permission.ViewModels
@@ -22,8 +23,6 @@ namespace ColorSys.Permission.ViewModels
         [ObservableProperty]
         private string _userName = string.Empty;
 
-        [ObservableProperty]
-        private string _password = string.Empty;
 
         [ObservableProperty]
         private string _expireMinutes = "30";
@@ -31,17 +30,28 @@ namespace ColorSys.Permission.ViewModels
         [RelayCommand]
         private void Login(Window win)
         {
+            var pwdbox=() => win.FindName("tb_Pwd") as PasswordBox;
+            var Password = pwdbox()?.Password;
             try
             {
                 if (int.TryParse(ExpireMinutes, out var min))
                     _auth.ExpireMinutes = min;
 
-                _auth.Login(UserName, Password);
+                _auth.Login(UserName, Password??"");
+                win.DialogResult = true;
+                win.Close();
             }
             catch (UnauthorizedAccessException ex)
             {
                 MessageBox.Show(ex.Message, "登录失败");
             }
+        }
+
+        [RelayCommand]
+        private void LoginOut(Window win)
+        {
+            win.DialogResult = true;
+            win.Close();
         }
     }
     

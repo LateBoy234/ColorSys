@@ -1,0 +1,8 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:s="clr-namespace:System;assembly=mscorlib">
+	<s:String x:Key="S_Login">登录</s:String>
+	<s:String x:Key="S_Logout">注销</s:String>
+	<s:String x:Key="S_LangCN">中文</s:String>
+	<s:String x:Key="S_LangUS">英文</s:String>
+</ResourceDictionary>
