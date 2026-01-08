@@ -1,4 +1,5 @@
 ﻿using CColorSys.WPF.Interface;
+using ColorSys.HardwareImplementation.Communication.PLC;
 using ColorSys.Permission;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -42,8 +43,11 @@ namespace ColorSys.WPF.ViewModels
 
         [ObservableProperty]
         private bool _canC;
+
+        [ObservableProperty]
+        private string _alarmMsg;
         #endregion
-       
+
         [ObservableProperty]
         private string _title;
 
@@ -84,6 +88,26 @@ namespace ColorSys.WPF.ViewModels
         {
             App.ChangeLanguage("en-US");
         }
+
+        [RelayCommand]
+        private void A()
+        {
+            Simens s = new Simens("127.0.0.1");
+            s.Alarm += S_Alarm;
+        }
+
+        [RelayCommand]
+        private void B()
+        {
+            Simens s = new Simens("127.0.0.1");
+            s.Alarm += S_Alarm;
+        }
+
+        private void S_Alarm(string obj)
+        {
+            AlarmMsg=obj;
+        }
+
         private void RefreshPermissions()
         {
             var user = _auth.CurrentUser;

@@ -24,13 +24,14 @@
         </Menu>
         <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center">
             <WrapPanel>
-                <Button Content="按钮 A" Width="80" Height="40" Margin="5"
+                <Button Content="按钮 A" Width="80" Height="40" Margin="5" Command="{Binding ACommand}"
                   IsEnabled="{Binding CanA}"/>
-                <Button Content="按钮 B" Width="80" Height="40" Margin="5"
+                <Button Content="按钮 B" Width="80" Height="40" Margin="5" Command="{Binding BCommand}"
                   IsEnabled="{Binding CanB}"/>
                 <Button Content="按钮 C" Width="80" Height="40" Margin="5"
                   IsEnabled="{Binding CanC}"/>
             </WrapPanel>
+            <TextBox Text="{Binding AlarmMsg}" Foreground="Red" Margin=" 10"/>
         </StackPanel>
     </Grid>
   
