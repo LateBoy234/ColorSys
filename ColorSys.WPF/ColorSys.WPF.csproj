@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ColorSys.Domain\ColorSys.Domain.csproj" />
     <ProjectReference Include="..\ColorSys.HardwareContract\ColorSys.HardwareContract.csproj" />
     <ProjectReference Include="..\ColorSys.HardwareImplementation\ColorSys.HardwareImplementation.csproj" />
     <ProjectReference Include="..\ColorSys.Permission\ColorSys.Permission.csproj" />

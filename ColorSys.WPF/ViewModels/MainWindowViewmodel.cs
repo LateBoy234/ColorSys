@@ -1,6 +1,8 @@
 ﻿using CColorSys.WPF.Interface;
 using ColorSys.HardwareImplementation.Communication.PLC;
+using ColorSys.HardwareImplementation.SystemConfig;
 using ColorSys.Permission;
+using ColorSys.Domain.Config;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
@@ -11,6 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Navigation;
+using ColorSys.Domain.Model;
 
 namespace ColorSys.WPF.ViewModels
 {
@@ -87,6 +90,13 @@ namespace ColorSys.WPF.ViewModels
         private void LangUS()
         {
             App.ChangeLanguage("en-US");
+        }
+
+        [RelayCommand]
+        private void SysConfigSetting()
+        {
+            ConfigManager.Instance.SetEnum("ConnectionMethod",
+                               ConnectionMethod.ByUSB);
         }
 
         [RelayCommand]

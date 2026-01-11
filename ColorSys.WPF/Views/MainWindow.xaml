@@ -12,16 +12,34 @@
             <RowDefinition Height="30"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <Menu>
-            <MenuItem Header="用户管理">
-                <MenuItem Header="{DynamicResource S_Login}" Command="{Binding LoginCommand}"/>
-                <MenuItem Header="{DynamicResource S_Logout}" Command="{Binding LogoutCommand}"/>
-            </MenuItem>
-            <MenuItem Header="语言设置">
-                <MenuItem Header="{DynamicResource S_LangCN}" Command="{Binding LangCNCommand}"/>
-                <MenuItem Header="{DynamicResource S_LangUS}" Command="{Binding LangUSCommand}"/>
-            </MenuItem>
-        </Menu>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <Menu Background="LightGray"  VerticalAlignment="Center" Height="30">
+                <MenuItem Header="用户管理"  Height="30">
+                    <MenuItem Header="{DynamicResource S_Login}" Command="{Binding LoginCommand}"/>
+                    <MenuItem Header="{DynamicResource S_Logout}" Command="{Binding LogoutCommand}"/>
+                </MenuItem>
+                <MenuItem Header="语言设置" HorizontalAlignment="Right">
+                    <MenuItem Header="{DynamicResource S_LangCN}" Command="{Binding LangCNCommand}"/>
+                    <MenuItem Header="{DynamicResource S_LangUS}" Command="{Binding LangUSCommand}"/>
+                </MenuItem>
+                <MenuItem Header="连接" HorizontalAlignment="Right">
+                    <MenuItem Header="USB" Command="{Binding USBConCommand}"/>
+                    <MenuItem Header="TCP" Command="{Binding TCPConCommand}"/>
+                </MenuItem>
+            </Menu>
+            <StackPanel Grid.Column="1" Background="LightGray">
+                <Button   Style="{DynamicResource button}" Content="{DynamicResource S_Setting}"  VerticalAlignment="Center" HorizontalAlignment="Center" Padding="5,1,5,1" Command="{Binding SysConfigSettingCommand}" Width="45">
+                </Button>
+            </StackPanel>
+          
+                
+           
+        </Grid>
+       
         <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center">
             <WrapPanel>
                 <Button Content="按钮 A" Width="80" Height="40" Margin="5" Command="{Binding ACommand}"
