@@ -1,6 +1,7 @@
 ﻿using CColorSys.WPF.Interface;
 using ColorSys.HardwareImplementation.Communication.PLC;
 using ColorSys.Permission;
+using ColorSys.Permission.EventModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
@@ -11,14 +12,17 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Navigation;
+using System.Windows.Threading;
 
 namespace ColorSys.WPF.ViewModels
 {
+    
     public partial  class MainWindowViewmodel:ObservableObject
     {
         private readonly IAuthService _auth;
         private readonly INavigationService _nav;
 
+        private readonly DispatcherTimer _timer;
         public MainWindowViewmodel(IAuthService auth, INavigationService nav)
         {
             _auth = auth;
@@ -31,6 +35,12 @@ namespace ColorSys.WPF.ViewModels
                                     or nameof(IAuthService.IsExpired))
                     RefreshPermissions();
             };
+            RefreshPermissions();
+            MessengerEvent.SessionExpired += MessengerEvent_SessionExpired;
+        }
+
+        private void MessengerEvent_SessionExpired()
+        {
             RefreshPermissions();
         }
 

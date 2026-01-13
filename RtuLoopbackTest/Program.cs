@@ -7,33 +7,27 @@ class Program
 {
     static void Main()
     {
-        // 1. 创建串口对象
-        using var sp = new SerialPort("COM4", 9600, Parity.None, 8, StopBits.One)
+        using var port = new SerialPort("COM11", 9600, Parity.None, 8, StopBits.One);
+        port.Open();
+
+        var factory = new ModbusFactory();
+        IModbusMaster master = factory.CreateRtuMaster(port);
+        ushort n = 0;
+
+        while (true)
         {
-            WriteTimeout = 500,
-            ReadTimeout = 500
-        };
-
-        // 2. 打开串口
-        sp.Open();
-        Console.WriteLine($"COM11 open = {sp.IsOpen}");
-
-        // 3. 裸发一条最短的 01 03 00 00 00 01 84 0A
-        byte[] frame = { 0x01, 0x03, 0x00, 0x00, 0x00, 0x01, 0x84, 0x0A };
-        sp.Write(frame, 0, frame.Length);
-        Console.WriteLine("8 字节已发出");
-
-        //sp.Write(frame, 0, frame.Length);
-        //Console.WriteLine("8 字节已发出");
-
-        Thread.Sleep(200);          // 给虚拟线一点转发时间
-        int n = sp.BytesToRead;
-        Console.WriteLine($"COM11 自己收到 {n} 字节");
-        // 4. 停 300 ms 让助手显示
-        Thread.Sleep(300);
-
-        // 5. 关闭
-        sp.Close();
-        Console.WriteLine("Done.");
+            try
+            {
+                ushort[] data = master.ReadHoldingRegisters(1, 0, 4); //从站地址1，起始地址0，读4个寄存器
+                Console.WriteLine($"40001-40004 = {string.Join(", ", data)}");
+                n++;
+                master.WriteSingleRegister(1, 0, n);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            System.Threading.Thread.Sleep(1000);
+        }
     }
 }
