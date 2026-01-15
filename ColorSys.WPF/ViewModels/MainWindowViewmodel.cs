@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Navigation;
 using ColorSys.Domain.Model;
+using ColorSys.WPF.Views;
 
 namespace ColorSys.WPF.ViewModels
 {
@@ -93,10 +94,16 @@ namespace ColorSys.WPF.ViewModels
         }
 
         [RelayCommand]
+        private void Connect()
+        {
+
+        }
+
+        [RelayCommand]
         private void SysConfigSetting()
         {
-            ConfigManager.Instance.SetEnum("ConnectionMethod",
-                               ConnectionMethod.ByUSB);
+           ConnectView connectView= new ConnectView();
+            connectView.ShowDialog();
         }
 
         [RelayCommand]
