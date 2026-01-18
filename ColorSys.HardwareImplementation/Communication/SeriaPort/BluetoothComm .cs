@@ -1,30 +1,39 @@
 ﻿using ColorSys.HardwareContract;
+using ColorSys.HardwareImplementation.Communication.CommParameter;
+using System.Net.Sockets;
 
 namespace ColorSys.HardwareImplementation.Communication.SeriaPort
 {
     public class BluetoothComm : ICommunication
     {
-        public bool IsConnected { get; private set; }
+        //private readonly BlutoothParameter _p;
+        //private TcpClient? _tcp;
 
-        public string ConnectionId => throw new NotImplementedException();
+        //public BluetoothComm(BlutoothParameter p) => _p = p;
 
-        public Task ConnectAsync(CancellationToken token = default) 
-        { 
-            /* 真实蓝牙 */ 
-            IsConnected = true; 
-            return Task.CompletedTask; 
-        }
-        public Task DisconnectAsync(CancellationToken token = default) 
+        //public async Task ConnectAsync()
+        //{
+        //    _tcp = new TcpClient();
+        //    await _tcp.ConnectAsync(_p.IP, _p.Port);
+        //}
+        //public bool IsConnected => _tcp?.Connected == true;
+        public bool IsConnected => throw new NotImplementedException();
+
+        public IObservable<byte[]> FrameStream => throw new NotImplementedException();
+
+        public Task ConnectAsync()
         {
-            IsConnected = false; 
-            return Task.CompletedTask;
+            throw new NotImplementedException();
         }
-        public Task<byte[]> SendAsync(byte[] data, CancellationToken token = default) => Task.FromResult(data);
-        public void Dispose() { }
 
-        public void Initialize()
+        public void Dispose()
         {
-           
+            throw new NotImplementedException();
+        }
+
+        public Task SendAsync(byte[] frame)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ColorSys.Domain\ColorSys.Domain.csproj" />
+  </ItemGroup>
+
 </Project>

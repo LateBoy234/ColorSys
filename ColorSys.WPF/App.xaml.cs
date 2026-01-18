@@ -1,7 +1,12 @@
 ﻿
 
 using Autofac;
+using ColorSys.HardwareContract;
+using ColorSys.HardwareImplementation.Communication.CommParameter;
+using ColorSys.HardwareImplementation.Communication.SeriaPort;
+using ColorSys.HardwareImplementation.Device.Hub;
 using ColorSys.WPF.ViewModels;
+using CommunityToolkit.Mvvm.Messaging;
 using System.Globalization;
 using System.IO;
 using System.Windows;
@@ -24,6 +29,17 @@ namespace ColorSys.WPF
             DispatcherUnhandledException += App_DispatcherUnhandledException;
 
             Container = AutofacBootstrapper.Build();
+
+            WeakReferenceMessenger.Default.Register<GetHubRequest>(this, (r, m) =>
+            {
+                m.Reply(Container.Resolve<IConnectedDeviceHub>());
+            });
+
+            WeakReferenceMessenger.Default.Register<GetSerialParaRequest>(this, (r, m) =>
+            {
+                m.Reply(Container.Resolve<SerialParameters>());
+            });
+
             var main = Container.Resolve<MainWindow>();
             main.DataContext = Container.Resolve<MainWindowViewmodel>();
             main.Show();

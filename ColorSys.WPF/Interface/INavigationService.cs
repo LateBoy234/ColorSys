@@ -9,5 +9,7 @@ namespace CColorSys.WPF.Interface
     public  interface INavigationService
     {
         bool ShowLoginDialog();
+
+        bool ShowConnectDialog();
     }
 }

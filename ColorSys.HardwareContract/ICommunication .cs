@@ -1,13 +1,15 @@
 ﻿namespace ColorSys.HardwareContract
 {
-    public interface  ICommunication : IDisposable
+    public interface  ICommunication :IDisposable
     {
-        string ConnectionId { get; }          // 端口/地址/序列号
-        bool IsConnected { get; }
-        Task ConnectAsync(CancellationToken token = default);
-        Task DisconnectAsync(CancellationToken token = default);
-        Task<byte[]> SendAsync(byte[] data, CancellationToken token = default);
+         Task ConnectAsync();
 
-        void Initialize();
+         bool IsConnected { get; }
+
+        // ① 主动发指令
+        Task SendAsync(byte[] frame);
+
+        // ② 实时侦听原始帧（热流，永不 Complete）
+        IObservable<byte[]> FrameStream { get; }
     }
 }

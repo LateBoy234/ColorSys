@@ -26,9 +26,10 @@
                     <MenuItem Header="{DynamicResource S_LangCN}" Command="{Binding LangCNCommand}"/>
                     <MenuItem Header="{DynamicResource S_LangUS}" Command="{Binding LangUSCommand}"/>
                 </MenuItem>
-                <MenuItem Header="连接" HorizontalAlignment="Right" Command="{Binding ConnectCommand}">
+               
+                <MenuItem Header="标样测试" HorizontalAlignment="Right" Command="{Binding MassureCommand}">
                     <!--<MenuItem Header="USB" Command="{Binding USBConCommand}"/>
-                    <MenuItem Header="TCP" Command="{Binding TCPConCommand}"/>-->
+     <MenuItem Header="TCP" Command="{Binding TCPConCommand}"/>-->
                 </MenuItem>
             </Menu>
             <StackPanel Grid.Column="1" Background="LightGray">

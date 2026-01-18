@@ -15,6 +15,7 @@ using System.Windows;
 using System.Windows.Navigation;
 using ColorSys.Domain.Model;
 using ColorSys.WPF.Views;
+using ColorSys.HardwareContract;
 
 namespace ColorSys.WPF.ViewModels
 {
@@ -23,10 +24,22 @@ namespace ColorSys.WPF.ViewModels
         private readonly IAuthService _auth;
         private readonly INavigationService _nav;
 
-        public MainWindowViewmodel(IAuthService auth, INavigationService nav)
+      
+        public IDevice? ColorDevice { get; set; }
+
+       
+        public MainWindowViewmodel(IAuthService auth, INavigationService nav, IConnectedDeviceHub hub)
         {
+            // 关键：监听 Hub 的变化
+            hub.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(hub.Current))
+                    ColorDevice = hub.Current;
+            };
+            ColorDevice = hub.Current;  
             _auth = auth;
             _nav = nav;
+            //ColorDevice = device;
             Title = "ColorSystem";
             // 监听 CurrentUser/IsExpired 变化
             _auth.PropertyChanged += (_, e) =>
@@ -94,16 +107,15 @@ namespace ColorSys.WPF.ViewModels
         }
 
         [RelayCommand]
-        private void Connect()
+        private void Massure()
         {
-
+            ColorDevice.RunTestAsync();
         }
 
         [RelayCommand]
         private void SysConfigSetting()
         {
-           ConnectView connectView= new ConnectView();
-            connectView.ShowDialog();
+            _nav.ShowConnectDialog();
         }
 
         [RelayCommand]

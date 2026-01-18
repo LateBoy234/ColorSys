@@ -2,6 +2,8 @@
 using CColorSys.WPF.Interface;
 using ColorSys.Permission;
 using ColorSys.Permission.ViewModels;
+using ColorSys.WPF.ViewModels;
+using ColorSys.WPF.Views;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,6 +20,15 @@ namespace ColorSys.WPF.Implementation
         {
             _scope= scope;
         }
+
+        public bool ShowConnectDialog()
+        {
+            var win = _scope.Resolve<ConnectView>();
+            var vm = _scope.Resolve<ConnectViewModel>();
+            win.DataContext = vm;
+            return win.ShowDialog() == true;
+        }
+
         public bool ShowLoginDialog()
         {
             var win = _scope.Resolve<LoginWindow>();

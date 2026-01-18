@@ -23,7 +23,6 @@ namespace ColorSys.WPF.Views
         public ConnectView()
         {
             InitializeComponent();
-            this.DataContext =new  ConnectViewModel();
         }
     }
 }

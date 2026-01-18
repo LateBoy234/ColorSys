@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace ColorSys.HardwareImplementation.Communication.PLC
 {
-    public class Simens : ICommunication
+    public class Simens
     {
 
         public Simens(string ip)

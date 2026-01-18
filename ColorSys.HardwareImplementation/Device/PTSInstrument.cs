@@ -1,5 +1,7 @@
-﻿using ColorSys.HardwareContract;
+﻿using ColorSys.Domain.Model;
+using ColorSys.HardwareContract;
 using ColorSys.HardwareContract.Model;
+using ColorSys.HardwareImplementation.Communication.SeriaPort;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,58 +12,41 @@ using System.Threading.Tasks;
 
 namespace ColorSys.HardwareImplementation.Device
 {
-    public sealed class PTSInstrument:IDevice 
+    public  class PTSInstrument : IDevice
     {
+        
 
-        private readonly Subject<TestModel> _subject = new();
-        public IObservable<TestModel> TestStream => _subject;
+        private readonly ICommunication _comm;
 
-        private readonly CancellationTokenSource _cts = new();
-        public PTSInstrument(string id, string model, ICommunication comm)
+        public PTSInstrument(ICommunication comm)   // Autofac 自动注入
         {
-            Comm = comm;
-            InstrumentId = id;
-            Model=model;
+            _comm = comm;
         }
+        public DeviceType DeviceType => DeviceType.PTS;
 
-        public string InstrumentId { get; }
+        public bool IsConnected => _comm.IsConnected;
+        public ICommunication Comm => _comm;
 
-        public string Model { get; }
-
-        public ICommunication Comm { get; }
+        public async Task<bool> ConnectAsync()
+        {
+            await _comm.ConnectAsync();
+            if (!_comm.IsConnected)
+            {
+                return false;
+            } 
+            return true;
+        }
 
         public void Dispose()
         {
-            _cts.Cancel();
-            _subject.OnCompleted();
-            _subject.Dispose();
             Comm.Dispose();
         }
 
-      
-       public async  Task  RunTestAsync(CancellationToken token)
+        public async Task<TestModel> RunTestAsync(CancellationToken token = default)
         {
-            await Comm.ConnectAsync(token);
-            _ = Task.Run(async () =>
-            {
-                while (!token.IsCancellationRequested)
-                {
-                    await Task.Delay(100, token);
-                    var raw = await Comm.SendAsync(new byte[] { 0x01 }, token);
-                    var data = new TestModel(new TestModel()
-                    {
-                        ID = 1,
-                        Name = "Samp1",
-                        DateTime = DateTime.Now,
-                        Material = "1",
-                        OpticalStruct = "SCI",
-                        InstrumentSN = "PTS001",
-                        DataValues = new[] { BitConverter.ToDouble(raw, 0) }
-                    });
-                    _subject.OnNext(data);
-                }
-            }, token);
-            
+            Comm.SendAsync(new byte[] { 0x55, 0xaa, 0xa1, 0x00, 0x00, 0x00, 0x02, 0x00, 0x02 });
+            return await Task.Delay(1000).ContinueWith(x => new TestModel());
+           // return await Comm.ReceiveAsync<TestModel>(token);
         }
     }
 }

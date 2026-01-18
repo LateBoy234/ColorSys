@@ -21,8 +21,19 @@
                     <RowDefinition/>
                     <RowDefinition/>
                     <RowDefinition/>
+                    <RowDefinition/>
                 </Grid.RowDefinitions>
                 <StackPanel Orientation="Horizontal" Grid.Row="0">
+                    <Label Content="仪器类型："/>
+                    <ComboBox ItemsSource="{Binding DeviceTypeList}" SelectedItem="{Binding SelectDeviceType}"  HorizontalAlignment="Center" Margin="5">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumDescConverter}}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Grid.Row="1">
                     <Label Content="连接方式："/>
                     <ComboBox ItemsSource="{Binding CommunicationTypeList}" SelectedItem="{Binding SelectCommunicationType}"  HorizontalAlignment="Center" Margin="5">
                         <ComboBox.ItemTemplate>
@@ -32,7 +43,7 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
                 </StackPanel>
-                <ContentControl Content="{Binding SerialOptions}" Grid.Row="1">
+                <ContentControl Content="{Binding SerialOptions}" Grid.Row="2">
                     <ContentControl.ContentTemplate>
                         <DataTemplate>
                             <StackPanel>
@@ -112,6 +123,10 @@
                         </DataTemplate>
                     </ContentControl.ContentTemplate>
                 </ContentControl>
+                <StackPanel Orientation="Horizontal" Margin="5" Grid.Row="3">
+                    <Button Content="确定" Command="{Binding ConnectCommand}"  CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}" Margin="5"/>
+                    <Button Content="取消" Command="{Binding CancelCommand}"  CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}" Margin="5"/>
+                </StackPanel>
             </Grid>
         </StackPanel>
         

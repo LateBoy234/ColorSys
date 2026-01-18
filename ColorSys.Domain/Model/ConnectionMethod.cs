@@ -1,12 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO.Ports;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace ColorSys.Domain.Model
 {
+
+    public enum DeviceType
+    {
+        PTS,
+        CR
+    }
     public enum ConnectionMethod
     {
         TCP,
@@ -43,9 +50,32 @@ namespace ColorSys.Domain.Model
         Even
     }
 
+
     public enum StopBit
     {
-        StopBit1,
-        StopBit2,
+        None = 0,
+        One = 1,
+        Two = 2,
+        OnePointFive = 3,
+    }
+
+    public static class ParityMapper
+    {
+        public static Parity ToSystemParity(this ParityBit p) => p switch
+        {
+            ParityBit.None => Parity.None,
+            ParityBit.Odd => Parity.Odd,
+            ParityBit.Even => Parity.Even,
+            _ => throw new ArgumentOutOfRangeException(nameof(p))
+        };
+
+        public static StopBits ToSystemStopBits(this StopBit s) => s switch
+        {
+            StopBit.None => StopBits.One,
+            StopBit.One => StopBits.One,
+            StopBit.Two => StopBits.Two,
+            StopBit.OnePointFive => StopBits.OnePointFive,
+            _ => throw new ArgumentOutOfRangeException(nameof(s))
+        };
     }
 }
