@@ -6,10 +6,9 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
 {
     public class BluetoothComm : ICommunication
     {
-        //private readonly BlutoothParameter _p;
-        //private TcpClient? _tcp;
-
-        //public BluetoothComm(BlutoothParameter p) => _p = p;
+        private readonly BlutoothParameter _p;
+       
+        public BluetoothComm(BlutoothParameter p) => _p = p;
 
         //public async Task ConnectAsync()
         //{

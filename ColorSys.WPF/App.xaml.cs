@@ -1,14 +1,18 @@
 ﻿
 
 using Autofac;
+using ColorSys.Domain.Model;
 using ColorSys.HardwareContract;
 using ColorSys.HardwareImplementation.Communication.CommParameter;
+using ColorSys.HardwareImplementation.Communication.CommParamVm;
 using ColorSys.HardwareImplementation.Communication.SeriaPort;
-using ColorSys.HardwareImplementation.Device.Hub;
+using ColorSys.HardwareImplementation.Communication.TCP;
+using ColorSys.HardwareImplementation.Device;
 using ColorSys.WPF.ViewModels;
 using CommunityToolkit.Mvvm.Messaging;
 using System.Globalization;
 using System.IO;
+using System.Management;
 using System.Windows;
 
 namespace ColorSys.WPF
@@ -20,31 +24,23 @@ namespace ColorSys.WPF
     {
         public static IContainer Container { get; private set; } = null!;
 
-        protected override  void OnStartup(StartupEventArgs e)
+        protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
             ChangeLanguage("zh-CN");
             //全局异常处理，防止闪退
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             DispatcherUnhandledException += App_DispatcherUnhandledException;
-
+            //方式一注册
             Container = AutofacBootstrapper.Build();
 
-            WeakReferenceMessenger.Default.Register<GetHubRequest>(this, (r, m) =>
-            {
-                m.Reply(Container.Resolve<IConnectedDeviceHub>());
-            });
-
-            WeakReferenceMessenger.Default.Register<GetSerialParaRequest>(this, (r, m) =>
-            {
-                m.Reply(Container.Resolve<SerialParameters>());
-            });
-
+           
             var main = Container.Resolve<MainWindow>();
             main.DataContext = Container.Resolve<MainWindowViewmodel>();
             main.Show();
         }
 
+       
         public static void ChangeLanguage(string cultureName)
         {
             var newDict = new ResourceDictionary

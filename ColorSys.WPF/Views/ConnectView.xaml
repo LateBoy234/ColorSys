@@ -3,132 +3,123 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ColorSys.WPF.Views"
-        xmlns:EnumConvert="clr-namespace:ColorSys.Permission.ValueRules;assembly=ColorSys.Permission"
+        xmlns:vm="clr-namespace:ColorSys.HardwareImplementation.Communication.CommParamVm;assembly=ColorSys.HardwareImplementation"
         mc:Ignorable="d"
-        Title="ConnectView" Height="450" Width="800">
+        Title="设备连接" Height="550" Width="500"
+        WindowStartupLocation="CenterOwner">
+
     <Window.Resources>
-        <EnumConvert:EnumDescriptionConverter x:Key="EnumDescConverter"/>
+        <!-- TCP 配置模板 -->
+        <DataTemplate DataType="{x:Type vm:TcpParamVm}">
+            <StackPanel Margin="10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="80"/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="35"/>
+                        <RowDefinition Height="35"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="IP地址：" VerticalAlignment="Center"/>
+                    <TextBox Grid.Column="1" Text="{Binding IP}" VerticalAlignment="Center"/>
+
+                    <TextBlock Grid.Row="1" Text="端口号：" VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Port}" 
+                             VerticalAlignment="Center" Width="80" HorizontalAlignment="Left"/>
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- 串口配置模板 -->
+        <DataTemplate DataType="{x:Type vm:SerialParamVm}">
+            <StackPanel Margin="10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="80"/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="35"/>
+                        <RowDefinition Height="35"/>
+                        <RowDefinition Height="35"/>
+                        <RowDefinition Height="35"/>
+                        <RowDefinition Height="35"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="端口号：" VerticalAlignment="Center"/>
+                    <ComboBox Grid.Column="1" ItemsSource="{Binding AvailablePorts}" 
+                              SelectedItem="{Binding PortName}" VerticalAlignment="Center"/>
+
+                    <TextBlock Grid.Row="1" Text="波特率：" VerticalAlignment="Center"/>
+                    <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding BaudRates}" 
+                              SelectedItem="{Binding BaudRate}" VerticalAlignment="Center"/>
+
+                    <TextBlock Grid.Row="2" Text="数据位：" VerticalAlignment="Center"/>
+                    <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding DataBitsList}" 
+                              SelectedItem="{Binding DataBits}" VerticalAlignment="Center"/>
+
+                    <TextBlock Grid.Row="3" Text="校验位：" VerticalAlignment="Center"/>
+                    <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding Parities}" 
+                              SelectedItem="{Binding Parity}" VerticalAlignment="Center"/>
+
+                    <TextBlock Grid.Row="4" Text="停止位：" VerticalAlignment="Center"/>
+                    <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding StopBitsList}" 
+                              SelectedItem="{Binding StopBits}" VerticalAlignment="Center"/>
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- 蓝牙配置模板（预留） -->
+      
     </Window.Resources>
-    <Grid>
+
+    <Grid Margin="20">
         <Grid.RowDefinitions>
-            <RowDefinition Height="36"/>
-            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition/>
-                    <RowDefinition/>
-                    <RowDefinition/>
-                    <RowDefinition/>
-                </Grid.RowDefinitions>
-                <StackPanel Orientation="Horizontal" Grid.Row="0">
-                    <Label Content="仪器类型："/>
-                    <ComboBox ItemsSource="{Binding DeviceTypeList}" SelectedItem="{Binding SelectDeviceType}"  HorizontalAlignment="Center" Margin="5">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Converter={StaticResource EnumDescConverter}}"/>
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Grid.Row="1">
-                    <Label Content="连接方式："/>
-                    <ComboBox ItemsSource="{Binding CommunicationTypeList}" SelectedItem="{Binding SelectCommunicationType}"  HorizontalAlignment="Center" Margin="5">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Converter={StaticResource EnumDescConverter}}"/>
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                </StackPanel>
-                <ContentControl Content="{Binding SerialOptions}" Grid.Row="2">
-                    <ContentControl.ContentTemplate>
-                        <DataTemplate>
-                            <StackPanel>
-                                <Grid Name="netSocketTypy" Visibility="Collapsed" Margin="5">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition/>
-                                        <RowDefinition/>
-                                    </Grid.RowDefinitions>
-                                    <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="5">
-                                        <TextBlock Text="IP："/>
-                                        <TextBox Text="{Binding IP}" MinWidth="100"/>
-                                    </StackPanel >
-                                    <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="5">
-                                        <TextBlock Text="Port："/>
-                                        <TextBox Text="{Binding Port}" MinWidth="80"/>
-                                    </StackPanel>
-                                </Grid>
-                                <Grid Name="usbType" Visibility="Collapsed" Margin="5">
-                                    <StackPanel Orientation="Vertical">
-                                        <StackPanel Orientation="Horizontal" Margin="10">
-                                            <TextBlock Text="端口号：" Margin="5"/>
-                                            <ComboBox ItemsSource="{Binding SerialPortList}" SelectedItem="{Binding SelectedSerialPort}" HorizontalAlignment="Center" Margin="5" >
-                                               
-                                            </ComboBox>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="10">
-                                            <TextBlock Text="波特率：" Margin="5"/>
-                                            <ComboBox ItemsSource="{Binding BaudRateList}" SelectedItem="{Binding SelectedBaudRate}" HorizontalAlignment="Center" Margin="5">
-                                                <ComboBox.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding Converter={StaticResource EnumDescConverter}}"/>
-                                                    </DataTemplate>
-                                                </ComboBox.ItemTemplate>
-                                            </ComboBox>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="10">
-                                            <TextBlock Text="数据位：" Margin="5"/>
-                                            <ComboBox ItemsSource="{Binding DateBitList}" SelectedItem="{Binding SelectedDateBit}" HorizontalAlignment="Center" Margin="5">
-                                                <ComboBox.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding Converter={StaticResource EnumDescConverter}}"/>
-                                                    </DataTemplate>
-                                                </ComboBox.ItemTemplate>
-                                            </ComboBox>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="10">
-                                            <TextBlock Text="校验位：" Margin="5"/>
-                                            <ComboBox ItemsSource="{Binding ParityBitList}" SelectedItem="{Binding SelectedParityBit}" HorizontalAlignment="Center" Margin="5">
-                                                <ComboBox.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding Converter={StaticResource EnumDescConverter}}"/>
-                                                    </DataTemplate>
-                                                </ComboBox.ItemTemplate>
-                                            </ComboBox>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="10">
-                                            <TextBlock Text="停止位：" Margin="5"/>
-                                            <ComboBox ItemsSource="{Binding StopBitList}" SelectedItem="{Binding SelectedStopBit}" HorizontalAlignment="Center" Margin="5">
-                                                <ComboBox.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding Converter={StaticResource EnumDescConverter}}"/>
-                                                    </DataTemplate>
-                                                </ComboBox.ItemTemplate>
-                                            </ComboBox>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Grid>
-                            </StackPanel>
-                            <DataTemplate.Triggers>
-                                <DataTrigger Binding="{Binding ParentCommType}" Value="TCP">
-                                    <Setter TargetName="netSocketTypy" Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding ParentCommType}" Value="USB">
-                                    <Setter TargetName="usbType" Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </DataTemplate.Triggers>
-                        </DataTemplate>
-                    </ContentControl.ContentTemplate>
-                </ContentControl>
-                <StackPanel Orientation="Horizontal" Margin="5" Grid.Row="3">
-                    <Button Content="确定" Command="{Binding ConnectCommand}"  CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}" Margin="5"/>
-                    <Button Content="取消" Command="{Binding CancelCommand}"  CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}" Margin="5"/>
-                </StackPanel>
-            </Grid>
+
+        <!-- 仪器类型 -->
+        <StackPanel Orientation="Horizontal" Margin="5">
+            <TextBlock Text="仪器类型：" Width="80" VerticalAlignment="Center"/>
+            <ComboBox ItemsSource="{Binding DeviceStrategies}" 
+                      SelectedItem="{Binding SelectedDeviceStrategy}"
+                      DisplayMemberPath="DisplayName" Width="200"/>
         </StackPanel>
-        
+
+        <!-- 连接方式 -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="5">
+            <TextBlock Text="连接方式：" Width="80" VerticalAlignment="Center"/>
+            <ComboBox ItemsSource="{Binding CommStrategies}" 
+                      SelectedItem="{Binding SelectedCommStrategy}"
+                      DisplayMemberPath="DisplayName" Width="200"/>
+        </StackPanel>
+
+        <!-- 动态参数面板 -->
+        <Border Grid.Row="2" BorderBrush="#FFCCCCCC" BorderThickness="1" 
+                Margin="5" CornerRadius="3" MinHeight="150">
+            <ContentControl Content="{Binding CurrentConfigViewModel}" 
+                          VerticalAlignment="Stretch"/>
+        </Border>
+
+        <!-- 连接状态提示（可选） -->
+        <TextBlock Grid.Row="3" Text="{Binding StatusMessage}" 
+                   Foreground="Gray" HorizontalAlignment="Center" Margin="10"/>
+
+        <!-- 按钮 -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" 
+                    HorizontalAlignment="Center" Margin="10">
+            <Button Content="连接" Command="{Binding ConnectCommand}" 
+                    CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                    Width="80" Margin="10" IsDefault="True"/>
+            <Button Content="取消" Command="{Binding CancelCommand}" 
+                    CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                    Width="80" Margin="10" IsCancel="True"/>
+        </StackPanel>
     </Grid>
 </Window>

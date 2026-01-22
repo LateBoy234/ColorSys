@@ -36,7 +36,6 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
             }
             catch (Exception ex)
             {
-
                 throw;
             }
            

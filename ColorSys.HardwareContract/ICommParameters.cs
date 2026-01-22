@@ -8,5 +8,6 @@ namespace ColorSys.HardwareContract
 {
     public interface ICommParameters
     {
+
     }
 }

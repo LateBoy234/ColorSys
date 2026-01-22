@@ -3,10 +3,10 @@ using Autofac.Core;
 using ColorSys.Domain.Model;
 using ColorSys.Domain.StaticService;
 using ColorSys.HardwareContract;
+using ColorSys.HardwareContract.Strategy;
 using ColorSys.HardwareImplementation.Communication.CommParameter;
 using ColorSys.HardwareImplementation.Communication.SeriaPort;
 using ColorSys.HardwareImplementation.Device;
-using ColorSys.HardwareImplementation.Device.Hub;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -23,57 +23,82 @@ namespace ColorSys.WPF.ViewModels
     public partial class ConnectViewModel : ObservableObject
     {
 
-        //public IDevice? ColorDevice { get; set; }
-        //private ICommunication? Comm;
+        private readonly ICommStrategy[] _commStrategies;
+        private readonly IDeviceStrategy[] _deviceStrategies;
 
-        private readonly Func<string, IDevice> _deviceFactory; // Autofac 自动生成
-        public ConnectViewModel(Func<string, IDevice> deviceFactory)
+        // 构造函数注入（Autofac 自动装配）
+        public ConnectViewModel(
+            IEnumerable<ICommStrategy> commStrategies,
+            IEnumerable<IDeviceStrategy> deviceStrategies)
         {
-            _deviceFactory = deviceFactory;
+            _commStrategies = commStrategies.ToArray();
+            _deviceStrategies = deviceStrategies.ToArray();
+        }
+
+        public IReadOnlyList<ICommStrategy> CommStrategies => _commStrategies;
+        public IReadOnlyList<IDeviceStrategy> DeviceStrategies => _deviceStrategies;
+
+        // ========== 选中项（关键：选中策略时自动创建配置VM）==========
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CurrentConfigViewModel))]  // 联动通知
+        private ICommStrategy _selectedCommStrategy;
+
+        partial void OnSelectedCommStrategyChanged(ICommStrategy value)
+        {
+            // 自动创建对应的配置VM
+            CurrentConfigViewModel = value?.CreateConfigViewModel();
         }
 
         [ObservableProperty]
-        private ConnectionMethod _selectCommunicationType;
+        private IDeviceStrategy _selectedDeviceStrategy;
 
-
-        private ConnectOptionViewModel? _serialOptions;
-        public ConnectOptionViewModel SerialOptions =>
-            _serialOptions ??= new ConnectOptionViewModel();
-        public Array CommunicationTypeList => Enum.GetValues<ConnectionMethod>();
-        public Array DeviceTypeList => Enum.GetValues<DeviceType>();
+        // ========== 动态配置VM（XAML ContentControl 绑这个）==========
 
         [ObservableProperty]
-        private DeviceType _selectDeviceType;
+        private IConfigViewModel _currentConfigViewModel;
+
+      
+
+        // 用于传回主窗体的结果
+        public IDevice DialogResult { get; private set; }
 
         [RelayCommand]
-        partial void OnSelectCommunicationTypeChanged(ConnectionMethod value)
+       
+        public async Task ConnectAsync(Window win)
         {
-            if (SerialOptions != null)
-                SerialOptions.ParentCommType = value;
-        }
-
-        [RelayCommand]
-        public async Task Connect(Window win)
-        {
-            var para = WeakReferenceMessenger.Default.Send(new GetSerialParaRequest()).Response;
-            para.PortName = SerialOptions.SelectedSerialPort;
-            para.DataBits = (int)SerialOptions.SelectedDateBit;
-            para.BaudRate =(int) SerialOptions.SelectedBaudRate;
-            para.Parity = SerialOptions.SelectedParityBit;
-            para.StopBits = SerialOptions.SelectedStopBit;
-
-
-
-            var key = $"{SelectDeviceType}-{SelectCommunicationType}"; // "PTS-rtu"
-            var device = _deviceFactory(key);             // 直接拿到实例
-            await device.ConnectAsync();
-            if (device.IsConnected)
+            if (SelectedCommStrategy == null || SelectedDeviceStrategy == null || CurrentConfigViewModel == null)
             {
-                var hub = WeakReferenceMessenger.Default.Send(new GetHubRequest());
-                var instance = hub.Response;
-                instance.Current=device;
-                win.DialogResult = true;
-                win.Close();
+                MessageBox.Show("请选择仪器类型和连接方式");
+                return;
+            }
+
+            try
+            {
+                // 1. 获取配置
+                var config = CurrentConfigViewModel.GetConfig();
+
+                // 2. 创建通讯
+                var comm = SelectedCommStrategy.creatCommunication(config);
+
+                // 3. 创建设备
+                var device = SelectedDeviceStrategy.GetDevice(comm);
+
+                // 4. 连接
+                if (await device.ConnectAsync())
+                {
+                    // 成功，关闭窗口并返回设备
+                    DialogResult = device;
+                    win?.Close();
+                }
+                else
+                {
+                    MessageBox.Show("连接失败");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"连接错误：{ex.Message}");
             }
         }
 
@@ -85,48 +110,5 @@ namespace ColorSys.WPF.ViewModels
         }
     }
 
-    public partial class ConnectOptionViewModel : ObservableObject
-    {
-
-        public ConnectOptionViewModel()
-        {
-            IP = "127.0.0.1";
-            Port = 8080;
-            var ports = SerialPortService.GetAllPorts();
-            foreach (var port in ports)
-            {
-                _serialPortList.Add(port.PortName);
-            }
-            _selectedSerialPort = _serialPortList?.FirstOrDefault() ?? "无设备";
-
-            SelectedBaudRate = BaudRate._9600;   // 对应 9600
-            SelectedDateBit = DateBit._8;       // 同理，给其余属性也写上
-        }
-        [ObservableProperty]
-        private string _iP;
-        [ObservableProperty]
-        private int _port;
-        [ObservableProperty]
-        private string _selectedSerialPort;
-        [ObservableProperty]
-        private BaudRate _selectedBaudRate;
-        [ObservableProperty]
-        private DateBit _selectedDateBit;
-        [ObservableProperty]
-        private ParityBit _selectedParityBit;
-        [ObservableProperty]
-        private StopBit _selectedStopBit;
-
-        [ObservableProperty]
-        private ConnectionMethod _parentCommType;
-
-        public Array BaudRateList => Enum.GetValues<BaudRate>();
-        public Array DateBitList => Enum.GetValues<DateBit>();
-        public Array ParityBitList => Enum.GetValues<ParityBit>();
-        public Array StopBitList => Enum.GetValues<StopBit>();
-
-        [ObservableProperty]
-        private ObservableCollection<string> _serialPortList = new ObservableCollection<string>();
-
-    }
+   
 }

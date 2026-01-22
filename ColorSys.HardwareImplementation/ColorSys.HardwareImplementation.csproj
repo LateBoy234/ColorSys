@@ -18,4 +18,8 @@
     <ProjectReference Include="..\ColorSys.HardwareContract\ColorSys.HardwareContract.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Service\" />
+  </ItemGroup>
+
 </Project>
