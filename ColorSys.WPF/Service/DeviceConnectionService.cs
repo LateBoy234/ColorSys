@@ -1,4 +1,5 @@
-﻿using ColorSys.HardwareContract;
+﻿using ColorSys.Domain.Model;
+using ColorSys.HardwareContract;
 using ColorSys.HardwareContract.Service;
 using ColorSys.HardwareContract.Strategy;
 using ColorSys.WPF.ViewModels;
@@ -17,6 +18,9 @@ namespace ColorSys.WPF.Service
         public IDevice CurrentDevice { get; private set; }
 
         public event EventHandler<DeviceConnectedEventArgs> DeviceChanged;
+        public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStatusChanged;
+
+        private readonly SynchronizationContext _syncContext;
 
         private readonly IEnumerable<ICommStrategy> _commStrategies;
         private readonly IEnumerable<IDeviceStrategy> _deviceStrategies;
@@ -27,6 +31,7 @@ namespace ColorSys.WPF.Service
         {
             _commStrategies = commStrategies;
             _deviceStrategies = deviceStrategies;
+            _syncContext = SynchronizationContext.Current; // 主线程创建
         }
 
         public async Task<IDevice> ConnectAsync()
@@ -35,6 +40,19 @@ namespace ColorSys.WPF.Service
             var vm = new ConnectViewModel(_commStrategies, _deviceStrategies);
             var window = new ConnectView { DataContext = vm };
 
+           
+            vm.StateChanged += (s, e) =>
+            {
+                _syncContext.Post(_ =>
+                {
+                    ConnectionStatusChanged?.Invoke(this, new ConnectionStateChangedEventArgs
+                    {
+                        State = e.State,
+                        Message = e.Message,
+                        CanReconnect = e.CanReconnect
+                    });
+                }, null);
+            };
             // 等待窗口关闭
             var result = window.ShowDialog();
 

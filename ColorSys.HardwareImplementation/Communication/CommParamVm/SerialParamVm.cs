@@ -13,6 +13,14 @@ namespace ColorSys.HardwareImplementation.Communication.CommParamVm
 {
     public partial  class SerialParamVm : ObservableObject, IConfigViewModel
     {
+        public SerialParamVm()
+        {
+            this.PortName = AvailablePorts.FirstOrDefault();
+            this.BaudRate = 9600;
+            this.DataBits = 8;
+            this.Parity = ParityBit.None;
+            this.StopBits = StopBit.One;
+        }
         #region ==== 真实绑定值 ====
         [Required(ErrorMessage = "串口号不能为空")]
         private string _portName = string.Empty;
@@ -28,6 +36,25 @@ namespace ColorSys.HardwareImplementation.Communication.CommParamVm
 
         [EnumDataType(typeof(StopBit), ErrorMessage = "请选择有效停止位")]
         private StopBit _stopBits = StopBit.One;
+        #endregion
+
+        #region ==== 集合数据源（关键！）====
+
+        // 可用串口号（动态获取）
+        public string[] AvailablePorts => System.IO.Ports.SerialPort.GetPortNames();
+
+        // 波特率选项
+        public int[] BaudRates => new[] { 9600, 19200, 38400, 57600, 115200 };
+
+        // 数据位选项（注意名字匹配 XAML：DataBitsList）
+        public int[] DataBitsList => new[] { 5, 6, 7, 8 };
+
+        // 校验位选项
+        public ParityBit[] Parities => (ParityBit[])Enum.GetValues(typeof(ParityBit));
+
+        // 停止位选项（注意名字匹配 XAML：StopBitsList）
+        public StopBit[] StopBitsList => (StopBit[])Enum.GetValues(typeof(StopBit));
+
         #endregion
 
         #region ==== 属性（带验证）====

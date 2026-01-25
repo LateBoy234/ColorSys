@@ -9,7 +9,7 @@ namespace ColorSys.HardwareContract.Strategy
     // 通讯策略
     public interface ICommStrategy
     {
-        string Displayname { get; }
+        string DisplayName { get; }
         IConfigViewModel CreateConfigViewModel();
         ICommunication  creatCommunication(ICommParameters commParameters);
     }

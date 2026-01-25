@@ -13,7 +13,7 @@ namespace ColorSys.HardwareImplementation.StrategyImp.Communication
 {
     public  class SerialCommStrategy : ICommStrategy
     {
-        public string Displayname => "串口 (RS232/485)";
+        public string DisplayName => "串口 (RS232/485)";
 
 
         public ICommunication creatCommunication(ICommParameters commParameters)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ColorSys.Domain.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -28,6 +29,9 @@ namespace ColorSys.HardwareContract.Service
         /// 设备连接状态变更事件
         /// </summary>
         event EventHandler<DeviceConnectedEventArgs> DeviceChanged;
+
+        // 新增：连接过程中的状态事件
+        event EventHandler<ConnectionStateChangedEventArgs> ConnectionStatusChanged;
     }
 
     public class DeviceConnectedEventArgs : EventArgs

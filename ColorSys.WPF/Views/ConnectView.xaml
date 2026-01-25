@@ -80,8 +80,8 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
+            <!--<RowDefinition Height="Auto"/>-->
         </Grid.RowDefinitions>
 
         <!-- 仪器类型 -->
@@ -108,11 +108,11 @@
         </Border>
 
         <!-- 连接状态提示（可选） -->
-        <TextBlock Grid.Row="3" Text="{Binding StatusMessage}" 
-                   Foreground="Gray" HorizontalAlignment="Center" Margin="10"/>
+        <!--<TextBlock Grid.Row="3" Text="{Binding StatusMessage}" 
+                   Foreground="Gray" HorizontalAlignment="Center" Margin="10"/>-->
 
         <!-- 按钮 -->
-        <StackPanel Grid.Row="4" Orientation="Horizontal" 
+        <StackPanel Grid.Row="3" Orientation="Horizontal" 
                     HorizontalAlignment="Center" Margin="10">
             <Button Content="连接" Command="{Binding ConnectCommand}" 
                     CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"

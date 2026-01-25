@@ -26,16 +26,21 @@ namespace ColorSys.WPF
 
 
             // 自动扫描所有策略
-            var assembly = Assembly.GetExecutingAssembly();
+            var assemblies = new[]
+                             {
+                                Assembly.GetExecutingAssembly(),                                    // ColorSys.WPF
+                                typeof(ICommStrategy).Assembly,                                     // ColorSys.HardwareContract（接口）
+                                Assembly.Load("ColorSys.HardwareImplementation") // 策略实现
+                            };
 
             // 通讯策略
-            builder.RegisterAssemblyTypes(assembly)
+            builder.RegisterAssemblyTypes(assemblies)
                    .Where(t => t.IsAssignableTo<ICommStrategy>())
                    .As<ICommStrategy>()
                    .SingleInstance();
 
             // 设备策略 ← 加这一行
-            builder.RegisterAssemblyTypes(assembly)
+            builder.RegisterAssemblyTypes(assemblies)
                    .Where(t => t.IsAssignableTo<IDeviceStrategy>())
                    .As<IDeviceStrategy>()
                    .SingleInstance();

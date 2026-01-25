@@ -23,8 +23,22 @@ namespace ColorSys.WPF.ViewModels
     public partial class ConnectViewModel : ObservableObject
     {
 
+        public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
+
         private readonly ICommStrategy[] _commStrategies;
         private readonly IDeviceStrategy[] _deviceStrategies;
+
+        private ICommunication _currentComm;  // 当前通信对象
+
+        // 对外暴露统一状态
+        [ObservableProperty]
+        private ConnectionState _connectionState;
+
+        [ObservableProperty]
+        private string _statusMessage;
+
+        // 是否显示"重连"按钮
+        public bool ShowReconnect => ConnectionState == ConnectionState.Lost;
 
         // 构造函数注入（Autofac 自动装配）
         public ConnectViewModel(
@@ -33,6 +47,12 @@ namespace ColorSys.WPF.ViewModels
         {
             _commStrategies = commStrategies.ToArray();
             _deviceStrategies = deviceStrategies.ToArray();
+            // 初始化选中项（可选）
+            if (CommStrategies.Any())
+                SelectedCommStrategy = CommStrategies.First();
+
+            if (DeviceStrategies.Any())
+                SelectedDeviceStrategy = DeviceStrategies.First();
         }
 
         public IReadOnlyList<ICommStrategy> CommStrategies => _commStrategies;
@@ -84,11 +104,24 @@ namespace ColorSys.WPF.ViewModels
                 // 3. 创建设备
                 var device = SelectedDeviceStrategy.GetDevice(comm);
 
+
+                // 创建通信对象
+                _currentComm = comm;
+
+                // 关键：订阅统一状态事件
+                // 订阅通信状态
+                _currentComm.StateChanged += (s, e) =>
+                {
+                    // 转发到服务
+                    StateChanged?.Invoke(this, e);
+                };
+
                 // 4. 连接
                 if (await device.ConnectAsync())
                 {
                     // 成功，关闭窗口并返回设备
                     DialogResult = device;
+                    win.DialogResult = true;
                     win?.Close();
                 }
                 else
@@ -108,7 +141,20 @@ namespace ColorSys.WPF.ViewModels
             win.DialogResult = true;
             win.Close();
         }
+
+        [RelayCommand]
+        private async Task ManualReconnectAsync()
+        {
+            if (_currentComm != null)
+            {
+                StatusMessage = "手动重连中...";
+                await _currentComm.ReconnectAsync();
+            }
+        }
+        // 对外事件
+        public event EventHandler DeviceLost;        // 设备丢失
+        public event EventHandler DeviceReconnected; // 重连成功
     }
 
-   
+
 }

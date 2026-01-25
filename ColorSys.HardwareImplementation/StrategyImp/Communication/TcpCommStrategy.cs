@@ -13,7 +13,7 @@ namespace ColorSys.HardwareImplementation.StrategyImp.Communication
 {
     public  class TcpCommStrategy : ICommStrategy
     {
-        public string Displayname => "TCP/IP";
+        public string DisplayName => "TCP/IP";
 
 
         public ICommunication creatCommunication(ICommParameters commParameters)

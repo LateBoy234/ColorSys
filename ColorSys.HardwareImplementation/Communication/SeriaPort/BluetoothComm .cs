@@ -1,4 +1,5 @@
-﻿using ColorSys.HardwareContract;
+﻿using ColorSys.Domain.Model;
+using ColorSys.HardwareContract;
 using ColorSys.HardwareImplementation.Communication.CommParameter;
 using System.Net.Sockets;
 
@@ -10,22 +11,29 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
        
         public BluetoothComm(BlutoothParameter p) => _p = p;
 
+        public bool IsConnected => throw new NotImplementedException();
+
+        public bool SupportsPlugDetect => throw new NotImplementedException();
+
+        public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
+
         //public async Task ConnectAsync()
         //{
         //    _tcp = new TcpClient();
         //    await _tcp.ConnectAsync(_p.IP, _p.Port);
         //}
         //public bool IsConnected => _tcp?.Connected == true;
-        public bool IsConnected => throw new NotImplementedException();
-
-        public IObservable<byte[]> FrameStream => throw new NotImplementedException();
-
         public Task ConnectAsync()
         {
             throw new NotImplementedException();
         }
 
         public void Dispose()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> ReconnectAsync()
         {
             throw new NotImplementedException();
         }

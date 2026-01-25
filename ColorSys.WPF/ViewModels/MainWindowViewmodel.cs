@@ -12,7 +12,6 @@ using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Text;
@@ -39,9 +38,12 @@ namespace ColorSys.WPF.ViewModels
             _nav = nav;
             //ColorDevice = device;
             Title = "ColorSystem";
-
+            ConnectStatus= "连接";
             // 订阅设备变更事件
             _connectionService.DeviceChanged += OnDeviceChanged;
+
+            // 订阅连接状态变化（连接过程中、自动断开/重连）
+            _connectionService.ConnectionStatusChanged += OnConnectionStatusChanged;
 
             // 初始化命令状态
             UpdateCommandStates();
@@ -117,13 +119,7 @@ namespace ColorSys.WPF.ViewModels
            // ColorDevice.RunTestAsync();
         }
 
-        [RelayCommand]
-        private async Task  SysConfigSetting()
-        {
-            //_nav.ShowConnectDialog();
-            var device = await _connectionService.ConnectAsync();
-            // 设备会自动通过事件同步到 CurrentDevice 属性
-        }
+       
 
         [RelayCommand]
         private void A()
@@ -164,7 +160,12 @@ namespace ColorSys.WPF.ViewModels
         [NotifyPropertyChangedFor(nameof(DeviceTypeDisplay))]
         private IDevice _currentDevice;
 
-        public bool IsDeviceConnected => CurrentDevice != null;
+        [ObservableProperty]
+        private string _connectStatus;
+        public bool IsDeviceConnected
+        {
+            get => CurrentDevice != null&&CurrentDevice.IsConnected;
+        }
 
         public string ConnectionStatus => IsDeviceConnected
             ? $"已连接: {DeviceTypeDisplay}"
@@ -178,26 +179,67 @@ namespace ColorSys.WPF.ViewModels
         //    _connectionService.Disconnect();
         //}
 
-        //[RelayCommand(CanExecute = nameof(IsDeviceConnected))]
-        //private async Task MeasureAsync()
-        //{
-        //    if (CurrentDevice is IMeasurement measurement)
-        //    {
-        //        var result = await measurement.MeasureAsync();
-        //        // 处理测量结果...
-        //    }
-        //}
+        [RelayCommand(CanExecute = nameof(IsDeviceConnected))]
+        private async Task MeasureAsync()
+        {
+            if (CurrentDevice is IMeasureMent measurement)
+            {
+                var result = await measurement.RunTestAsync();
+                // 处理测量结果...
+            }
+        }
 
+        [RelayCommand]
+        private async Task ConnectAsync()
+        {
+            try
+            {
+                if (_currentDevice != null)
+                {
+                    _connectionService.Disconnect();
+                    CurrentDevice = _connectionService.CurrentDevice;
+                    // 显示连接成功消息
+                    ConnectStatus = "连接";
+                }
+                else
+                {
+                    var device = await _connectionService.ConnectAsync();
+                    if (device!=null&&device.IsConnected)
+                    {
+                        CurrentDevice = device;
+                        // 显示连接成功消息
+                        ConnectStatus = "断开";
+                    }
+                    else
+                    {
+                        // 显示连接失败消息
+                        ConnectStatus = "连接";
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
         private void OnDeviceChanged(object sender, DeviceConnectedEventArgs e)
         {
-            CurrentDevice = e.Device;
+            if (e.IsConnected)
+            {
+                CurrentDevice = e.Device;
+                ConnectStatus = "断开";
+            }
+            else
+            {
+                CurrentDevice = null;
+                ConnectStatus = "连接";
+            }
             UpdateCommandStates();
         }
 
         private void UpdateCommandStates()
         {
-            //DisconnectCommand.NotifyCanExecuteChanged();
-            //MeasureCommand.NotifyCanExecuteChanged();
+           MeasureCommand.NotifyCanExecuteChanged();
         }
         #endregion
 
@@ -206,5 +248,33 @@ namespace ColorSys.WPF.ViewModels
             _connectionService.DeviceChanged -= OnDeviceChanged;
             _connectionService.Disconnect();
         }
+
+        // 连接过程中的状态（打开对话框时、自动断开/重连时）
+        private void OnConnectionStatusChanged(object sender, ConnectionStateChangedEventArgs e)
+        {
+           // ConnectionState = e.State;
+
+            // 可以在这里做更多 UI 反馈
+            switch (e.State)
+            {
+                case ConnectionState.Connecting:
+                    // 显示进度
+                    break;
+                case ConnectionState.Lost:
+                    ConnectStatus = "连接";
+                    CurrentDevice = null;
+                   // UpdateCommandStates();
+                   
+                    _connectionService.Disconnect();
+                    _connectionService.DeviceChanged -= OnDeviceChanged;
+                    // 显示警告
+                    break;
+                case ConnectionState.Reconnecting:
+                    // 显示重连中
+                    break;
+            }
+        }
+
+
     }
 }

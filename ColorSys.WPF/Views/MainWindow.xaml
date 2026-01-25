@@ -11,6 +11,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
             <RowDefinition/>
+            <RowDefinition Height="30"/>
         </Grid.RowDefinitions>
         <Grid>
             <Grid.ColumnDefinitions>
@@ -32,13 +33,18 @@
      <MenuItem Header="TCP" Command="{Binding TCPConCommand}"/>-->
                 </MenuItem>
             </Menu>
-            <StackPanel Grid.Column="1" Background="LightGray">
+            <!--<StackPanel Grid.Column="1" Background="LightGray">
                 <Button   Style="{DynamicResource button}" Content="{DynamicResource S_Setting}"  VerticalAlignment="Center" HorizontalAlignment="Center" Padding="5,1,5,1" Command="{Binding SysConfigSettingCommand}" Width="45">
                 </Button>
+            </StackPanel>-->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Background="LightGray">
+                <Button Content="{Binding ConnectStatus}" Command="{Binding ConnectCommand}"/>
+                <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"/>
+                <Button Content="开始测量" Command="{Binding MeasureCommand}"/>
             </StackPanel>
-          
-                
-           
+
+
+
         </Grid>
        
         <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -52,6 +58,9 @@
             </WrapPanel>
             <TextBox Text="{Binding AlarmMsg}" Foreground="Red" Margin=" 10"/>
         </StackPanel>
+        <StatusBar Grid.Row="2">
+            <TextBlock Text="{Binding ConnectionStatus}"/>
+        </StatusBar>
     </Grid>
   
 </Window>
