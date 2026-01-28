@@ -11,6 +11,6 @@ namespace ColorSys.HardwareContract.Strategy
     {
         string DisplayName { get; }
         IConfigViewModel CreateConfigViewModel();
-        ICommunication  creatCommunication(ICommParameters commParameters);
+        ICommunication  CreatCommunication(ICommParameters commParameters);
     }
 }

@@ -23,8 +23,6 @@ namespace ColorSys.WPF
         public static IContainer Build()
         {
             var builder = new ContainerBuilder();
-
-
             // 自动扫描所有策略
             var assemblies = new[]
                              {

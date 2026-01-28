@@ -4,63 +4,466 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:value="clr-namespace:ColorSys.WPF.ValueRules"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:local="clr-namespace:ColorSys.WPF"
-         Title="{Binding Title}"
-        mc:Ignorable="d" Height="450" Width="800">
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="30"/>
-            <RowDefinition/>
-            <RowDefinition Height="30"/>
-        </Grid.RowDefinitions>
+        Title="{Binding Title}"
+        mc:Ignorable="d" 
+        Height="900" Width="1600"
+        WindowState="Maximized"
+        Background="{DynamicResource MaterialDesignPaper}"
+        FontFamily="{DynamicResource MaterialDesignFont}">
+
+    <materialDesign:DialogHost Identifier="RootDialog">
         <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-            </Grid.ColumnDefinitions>
-            <Menu Background="LightGray"  VerticalAlignment="Center" Height="30">
-                <MenuItem Header="用户管理"  Height="30">
-                    <MenuItem Header="{DynamicResource S_Login}" Command="{Binding LoginCommand}"/>
-                    <MenuItem Header="{DynamicResource S_Logout}" Command="{Binding LogoutCommand}"/>
-                </MenuItem>
-                <MenuItem Header="语言设置" HorizontalAlignment="Right">
-                    <MenuItem Header="{DynamicResource S_LangCN}" Command="{Binding LangCNCommand}"/>
-                    <MenuItem Header="{DynamicResource S_LangUS}" Command="{Binding LangUSCommand}"/>
-                </MenuItem>
-               
-                <MenuItem Header="标样测试" HorizontalAlignment="Right" Command="{Binding MassureCommand}">
-                    <!--<MenuItem Header="USB" Command="{Binding USBConCommand}"/>
-     <MenuItem Header="TCP" Command="{Binding TCPConCommand}"/>-->
-                </MenuItem>
-            </Menu>
-            <!--<StackPanel Grid.Column="1" Background="LightGray">
-                <Button   Style="{DynamicResource button}" Content="{DynamicResource S_Setting}"  VerticalAlignment="Center" HorizontalAlignment="Center" Padding="5,1,5,1" Command="{Binding SysConfigSettingCommand}" Width="45">
-                </Button>
-            </StackPanel>-->
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Background="LightGray">
-                <Button Content="{Binding ConnectStatus}" Command="{Binding ConnectCommand}"/>
-                <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}"/>
-                <Button Content="开始测量" Command="{Binding MeasureCommand}"/>
-            </StackPanel>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
+            <!-- Menu Bar -->
+            <materialDesign:Card Grid.Row="0" UniformCornerRadius="0">
+                <Menu materialDesign:MenuAssist.TopLevelMenuItemHeight="28">
+                   
+                    <MenuItem Header="用户">
+                        <MenuItem Header="登录" Command="{Binding LoginCommand}">
+                            <MenuItem.Icon>
+                                <materialDesign:PackIcon Kind="Login"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="注销" Command="{Binding LogOutCommand}">
+                            <MenuItem.Icon>
+                                <materialDesign:PackIcon Kind="Logout"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="注册">
+                            <MenuItem.Icon>
+                                <materialDesign:PackIcon Kind="Register"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </MenuItem>
+                    <MenuItem Header="文件">
+                        <MenuItem Header="新建" InputGestureText="Ctrl+N">
+                            <MenuItem.Icon>
+                                <materialDesign:PackIcon Kind="FileDocumentOutline"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="打开" InputGestureText="Ctrl+O">
+                            <MenuItem.Icon>
+                                <materialDesign:PackIcon Kind="FolderOpenOutline"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="保存" InputGestureText="Ctrl+S">
+                            <MenuItem.Icon>
+                                <materialDesign:PackIcon Kind="ContentSave"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem Header="退出" InputGestureText="Alt+F4"/>
+                    </MenuItem>
+                    <MenuItem Header="测量">
+                        <MenuItem Header="开始测量" Command="{Binding MeasureCommand}">
+                            <MenuItem.Icon>
+                                <materialDesign:PackIcon Kind="PlayCircleOutline"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="标样测试" Command="{Binding MassureCommand}">
+                            <MenuItem.Icon>
+                                <materialDesign:PackIcon Kind="TestTube"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </MenuItem>
+                    <MenuItem Header="存储管理" IsEnabled="{Binding CanImportExport}">
+                        <MenuItem Header="查看历史数据"/>
+                        <MenuItem Header="导出数据"/>
+                        <MenuItem Header="导入数据"/>
+                    </MenuItem>
+                    <MenuItem Header="设置" IsEnabled="{Binding CanAccessSettings}">
+                        <MenuItem Header="语言">
+                            <MenuItem Header="{DynamicResource S_LangCN}" Command="{Binding LangCNCommand}"/>
+                            <MenuItem Header="{DynamicResource S_LangUS}" Command="{Binding LangUSCommand}"/>
+                        </MenuItem>
+                        <MenuItem Header="系统配置"/>
+                    </MenuItem>
+                    <MenuItem Header="色系配色"/>
+                    <MenuItem Header="帮助">
+                        <MenuItem Header="用户手册"/>
+                        <MenuItem Header="关于"/>
+                    </MenuItem>
+                </Menu>
+            </materialDesign:Card>
 
+            <!-- Toolbar -->
+            <materialDesign:Card Grid.Row="1" UniformCornerRadius="0" Padding="8,4">
+                <StackPanel Orientation="Horizontal">
+                    <!-- File Operations -->
+                    <Button Style="{StaticResource MaterialDesignToolButton}" 
+                            ToolTip="新建"
+                            IsEnabled="{Binding CanImportExport}">
+                        <materialDesign:PackIcon Kind="FileDocumentOutline" Width="24" Height="24"/>
+                    </Button>
+                    <Button Style="{StaticResource MaterialDesignToolButton}" 
+                            ToolTip="打开文件夹"
+                            IsEnabled="{Binding CanImportExport}">
+                        <materialDesign:PackIcon Kind="FolderOpenOutline" Width="24" Height="24"/>
+                    </Button>
+                    <Button Style="{StaticResource MaterialDesignToolButton}" 
+                            ToolTip="保存"
+                            IsEnabled="{Binding CanImportExport}">
+                        <materialDesign:PackIcon Kind="ContentSave" Width="24" Height="24"/>
+                    </Button>
+                    <Button Style="{StaticResource MaterialDesignToolButton}" 
+                            ToolTip="另存为"
+                            IsEnabled="{Binding CanImportExport}">
+                        <materialDesign:PackIcon Kind="ContentSaveAll" Width="24" Height="24"/>
+                    </Button>
+                    <Button Style="{StaticResource MaterialDesignToolButton}" 
+                            ToolTip="导出PDF"
+                            IsEnabled="{Binding CanImportExport}">
+                        <materialDesign:PackIcon Kind="FilePdfBox" Width="24" Height="24"/>
+                    </Button>
+                    
+                    <Separator Margin="8,0"/>
+                    
+                    <!-- Measurement Operations -->
+                    <Button Style="{StaticResource MaterialDesignToolButton}" 
+                            ToolTip="添加标样"
+                            IsEnabled="{Binding IsDeviceConnected}">
+                        <materialDesign:PackIcon Kind="PlusCircleOutline" Width="24" Height="24"/>
+                    </Button>
+                    <Button Style="{StaticResource MaterialDesignToolButton}" 
+                            ToolTip="目标"
+                            IsEnabled="{Binding IsDeviceConnected}">
+                        <materialDesign:PackIcon Kind="Target" Width="24" Height="24"/>
+                    </Button>
+                    <Button Style="{StaticResource MaterialDesignToolButton}" 
+                            ToolTip="测量"
+                            Command="{Binding MeasureCommand}">
+                        <materialDesign:PackIcon Kind="Crosshairs" Width="24" Height="24"/>
+                    </Button>
+                    <Button Style="{StaticResource MaterialDesignToolButton}" 
+                            ToolTip="删除"
+                            IsEnabled="{Binding IsDeviceConnected}">
+                        <materialDesign:PackIcon Kind="DeleteOutline" Width="24" Height="24"/>
+                    </Button>
+                    <Button Style="{StaticResource MaterialDesignToolButton}" 
+                            ToolTip="应用程序"
+                            IsEnabled="{Binding CanAccessSettings}">
+                        <materialDesign:PackIcon Kind="Apps" Width="24" Height="24"/>
+                    </Button>
+                    
+                    <Separator Margin="8,0"/>
+                    
+                    <!-- Connection & Settings -->
+                    <ComboBox Width="120" Margin="4,0" 
+                              materialDesign:HintAssist.Hint="光源"
+                              Style="{StaticResource MaterialDesignFilledComboBox}">
+                        <ComboBoxItem Content="D65/10°"/>
+                        <ComboBoxItem Content="D50/2°" IsSelected="True"/>
+                        <ComboBoxItem Content="A/10°"/>
+                    </ComboBox>
+                    
+                    <ComboBox Width="80" Margin="4,0"
+                              materialDesign:HintAssist.Hint="容差"
+                              Style="{StaticResource MaterialDesignFilledComboBox}">
+                        <ComboBoxItem Content="1.000" IsSelected="True"/>
+                        <ComboBoxItem Content="0.500"/>
+                        <ComboBoxItem Content="2.000"/>
+                    </ComboBox>
+                    
+                    <Separator Margin="8,0"/>
+                    
+                    <!-- Search -->
+                    <TextBox Width="200" Margin="4,0"
+                             materialDesign:HintAssist.Hint="搜索..."
+                             materialDesign:TextFieldAssist.HasClearButton="True"
+                             Style="{StaticResource MaterialDesignFilledTextBox}">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding SearchCommand}"/>
+                        </TextBox.InputBindings>
+                    </TextBox>
+                    
+                    <Separator Margin="8,0"/>
+                    
+                    <!-- Connection Status -->
+                    <Button Command="{Binding ConnectCommand}" 
+                            Style="{StaticResource MaterialDesignToolButton}"
+                            ToolTip="{Binding ConnectStatus}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="{Binding ConnectIconKind}" 
+                                                   Width="24" Height="24"/>
+                            <TextBlock Text="{Binding ConnectStatus}" 
+                                     Margin="4,0,0,0" 
+                                     VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </materialDesign:Card>
 
+            <!-- Main Content -->
+            <Grid Grid.Row="2" Margin="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="200"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left Sidebar - Tree Navigation -->
+                <materialDesign:Card Grid.Column="0" Margin="0,0,4,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <TextBlock Text="未设置数据集标签" 
+                                 Padding="12,8"
+                                 Background="{DynamicResource MaterialDesignDivider}"
+                                 FontWeight="Medium"/>
+                        
+                        <TreeView Grid.Row="1" Margin="4">
+                            <TreeViewItem Header="标样" IsExpanded="True">
+                                <TreeViewItem Header="D65/10°"/>
+                                <TreeViewItem Header="D50/2°"/>
+                            </TreeViewItem>
+                            <TreeViewItem Header="色彩数据" IsExpanded="True">
+                                <TreeViewItem Header="测量1"/>
+                                <TreeViewItem Header="测量2"/>
+                            </TreeViewItem>
+                            <TreeViewItem Header="所有选择"/>
+                        </TreeView>
+                    </Grid>
+                </materialDesign:Card>
+
+                <!-- Right Content Area -->
+                <Grid Grid.Column="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="4"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="4"/>
+                        <RowDefinition Height="280"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Top DataGrid - Standards -->
+                    <materialDesign:Card Grid.Row="0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            
+                            <Border Background="{DynamicResource MaterialDesignDivider}" Padding="8,4">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="标样" FontWeight="Medium" VerticalAlignment="Center"/>
+                                    <ComboBox Width="100" Margin="12,0,0,0"
+                                            materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                                            Style="{StaticResource MaterialDesignFilledComboBox}">
+                                        <ComboBoxItem Content="D65/10°" IsSelected="True"/>
+                                        <ComboBoxItem Content="D50/2°"/>
+                                    </ComboBox>
+                                    <ComboBox Width="80" Margin="8,0,0,0"
+                                            Style="{StaticResource MaterialDesignFilledComboBox}">
+                                        <ComboBoxItem Content="1.000" IsSelected="True"/>
+                                    </ComboBox>
+                                </StackPanel>
+                            </Border>
+                            
+                            <DataGrid Grid.Row="1" 
+                                    AutoGenerateColumns="False"
+                                    CanUserAddRows="False"
+                                    materialDesign:DataGridAssist.CellPadding="8,4"
+                                    materialDesign:DataGridAssist.ColumnHeaderPadding="8,4">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="L*" Width="60" Binding="{Binding LStar}"/>
+                                    <DataGridTextColumn Header="a*" Width="60" Binding="{Binding AStar}"/>
+                                    <DataGridTextColumn Header="b*" Width="60" Binding="{Binding BStar}"/>
+                                    <DataGridTextColumn Header="ID" Width="80" Binding="{Binding Id}"/>
+                                    <DataGridTextColumn Header="名称" Width="*" Binding="{Binding Name}"/>
+                                    <DataGridTextColumn Header="模拟色" Width="100" Binding="{Binding SimColor}"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </materialDesign:Card>
+
+                    <GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
+                                Background="{DynamicResource MaterialDesignDivider}"/>
+
+                    <!-- Middle DataGrid - Measurements -->
+                    <materialDesign:Card Grid.Row="2">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            
+                            <Border Background="{DynamicResource MaterialDesignDivider}" Padding="8,4">
+                                <TextBlock Text="测量数据" FontWeight="Medium"/>
+                            </Border>
+                            
+                            <DataGrid Grid.Row="1" 
+                                    AutoGenerateColumns="False"
+                                    CanUserAddRows="False"
+                                    materialDesign:DataGridAssist.CellPadding="8,4"
+                                    materialDesign:DataGridAssist.ColumnHeaderPadding="8,4">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="L*" Width="50" Binding="{Binding LStar}"/>
+                                    <DataGridTextColumn Header="a*" Width="50" Binding="{Binding AStar}"/>
+                                    <DataGridTextColumn Header="b*" Width="50" Binding="{Binding BStar}"/>
+                                    <DataGridTextColumn Header="ΔL*" Width="50" Binding="{Binding DeltaL}"/>
+                                    <DataGridTextColumn Header="Δa*" Width="50" Binding="{Binding DeltaA}"/>
+                                    <DataGridTextColumn Header="Δb*" Width="50" Binding="{Binding DeltaB}"/>
+                                    <DataGridTextColumn Header="ID" Width="80" Binding="{Binding Id}"/>
+                                    <DataGridTextColumn Header="名称" Width="*" Binding="{Binding Name}"/>
+                                    <DataGridTextColumn Header="模拟色" Width="80" Binding="{Binding SimColor}"/>
+                                    <DataGridTextColumn Header="颜色偏向" Width="80" Binding="{Binding ColorTrend}"/>
+                                    <DataGridTextColumn Header="结论" Width="80" Binding="{Binding Result}"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </materialDesign:Card>
+
+                    <GridSplitter Grid.Row="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
+                                Background="{DynamicResource MaterialDesignDivider}"/>
+
+                    <!-- Bottom - Charts Area -->
+                    <Grid Grid.Row="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="4"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="4"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Chart 1 - a*/b* Plot -->
+                        <materialDesign:Card Grid.Column="0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                
+                                <TextBlock Text="a*/b* 色度图" 
+                                         Padding="8,4" 
+                                         Background="{DynamicResource MaterialDesignDivider}"
+                                         FontWeight="Medium"/>
+                                
+                                <Border Grid.Row="1" BorderBrush="{DynamicResource MaterialDesignDivider}" 
+                                      BorderThickness="1" Margin="8">
+                                    <Canvas Background="White">
+                                        <!-- Placeholder for chart -->
+                                        <Line X1="0" Y1="120" X2="240" Y2="120" 
+                                            Stroke="{DynamicResource MaterialDesignDivider}" StrokeThickness="1"/>
+                                        <Line X1="120" Y1="0" X2="120" Y2="240" 
+                                            Stroke="{DynamicResource MaterialDesignDivider}" StrokeThickness="1"/>
+                                        <Ellipse Width="8" Height="8" Fill="Blue" Canvas.Left="116" Canvas.Top="116"/>
+                                    </Canvas>
+                                </Border>
+                            </Grid>
+                        </materialDesign:Card>
+
+                        <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+
+                        <!-- Chart 2 - Placeholder -->
+                        <materialDesign:Card Grid.Column="2">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                
+                                <TextBlock Text="颜色条" 
+                                         Padding="8,4" 
+                                         Background="{DynamicResource MaterialDesignDivider}"
+                                         FontWeight="Medium"/>
+                                
+                                <Border Grid.Row="1" Margin="8">
+                                    <Rectangle>
+                                        <Rectangle.Fill>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                <GradientStop Color="Violet" Offset="0"/>
+                                                <GradientStop Color="Blue" Offset="0.17"/>
+                                                <GradientStop Color="Cyan" Offset="0.34"/>
+                                                <GradientStop Color="Lime" Offset="0.5"/>
+                                                <GradientStop Color="Yellow" Offset="0.67"/>
+                                                <GradientStop Color="Orange" Offset="0.84"/>
+                                                <GradientStop Color="Red" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Rectangle.Fill>
+                                    </Rectangle>
+                                </Border>
+                            </Grid>
+                        </materialDesign:Card>
+
+                        <GridSplitter Grid.Column="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+
+                        <!-- Chart 3 - Color Space -->
+                        <materialDesign:Card Grid.Column="4">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                
+                                <TextBlock Text="色空间" 
+                                         Padding="8,4" 
+                                         Background="{DynamicResource MaterialDesignDivider}"
+                                         FontWeight="Medium"/>
+                                
+                                <Viewbox Grid.Row="1" Margin="8">
+                                    <Canvas Width="240" Height="240">
+                                        <!-- Color circle placeholder -->
+                                        <Ellipse Width="240" Height="240">
+                                            <Ellipse.Fill>
+                                                <RadialGradientBrush>
+                                                    <GradientStop Color="White" Offset="0"/>
+                                                    <GradientStop Color="Red" Offset="0.25"/>
+                                                    <GradientStop Color="Yellow" Offset="0.5"/>
+                                                    <GradientStop Color="Blue" Offset="0.75"/>
+                                                    <GradientStop Color="Magenta" Offset="1"/>
+                                                </RadialGradientBrush>
+                                            </Ellipse.Fill>
+                                        </Ellipse>
+                                        <Line X1="0" Y1="120" X2="240" Y2="120" Stroke="Gray" StrokeThickness="1"/>
+                                        <Line X1="120" Y1="0" X2="120" Y2="240" Stroke="Gray" StrokeThickness="1"/>
+                                    </Canvas>
+                                </Viewbox>
+                            </Grid>
+                        </materialDesign:Card>
+                    </Grid>
+                </Grid>
+            </Grid>
+
+            <!-- Status Bar -->
+            <materialDesign:Card Grid.Row="3" UniformCornerRadius="0" Padding="8,4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="测试" Margin="0,0,16,0"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Column="1" 
+                             Text="{Binding ConnectionStatus}" 
+                             VerticalAlignment="Center"/>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,16,0">
+                        <materialDesign:PackIcon Kind="{Binding ConnectionTypyIconKind}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBlock Text="{Binding ConnectionTypy}" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!--<ToggleButton Grid.Column="3" 
+                                Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                                IsChecked="True"
+                                ToolTip="自动/手动"/>-->
+                </Grid>
+            </materialDesign:Card>
         </Grid>
-       
-        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <WrapPanel>
-                <Button Content="按钮 A" Width="80" Height="40" Margin="5" Command="{Binding ACommand}"
-                  IsEnabled="{Binding CanA}"/>
-                <Button Content="按钮 B" Width="80" Height="40" Margin="5" Command="{Binding BCommand}"
-                  IsEnabled="{Binding CanB}"/>
-                <Button Content="按钮 C" Width="80" Height="40" Margin="5"
-                  IsEnabled="{Binding CanC}"/>
-            </WrapPanel>
-            <TextBox Text="{Binding AlarmMsg}" Foreground="Red" Margin=" 10"/>
-        </StackPanel>
-        <StatusBar Grid.Row="2">
-            <TextBlock Text="{Binding ConnectionStatus}"/>
-        </StatusBar>
-    </Grid>
-  
+    </materialDesign:DialogHost>
 </Window>

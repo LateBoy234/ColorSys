@@ -16,7 +16,7 @@ namespace ColorSys.HardwareImplementation.StrategyImp.Communication
         public string DisplayName => "TCP/IP";
 
 
-        public ICommunication creatCommunication(ICommParameters commParameters)
+        public ICommunication CreatCommunication(ICommParameters commParameters)
         {
            return new TcpCommunication((TcpParameters)commParameters);
         }

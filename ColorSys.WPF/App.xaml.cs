@@ -50,13 +50,13 @@ namespace ColorSys.WPF
             };
 
             // 找到旧的 Language 字典并删除
-            var oldDict = Application.Current.Resources.MergedDictionaries
+            var oldDict = Current.Resources.MergedDictionaries
                               .FirstOrDefault(d =>
                                   d.Source?.OriginalString.Contains("Language/") == true);
             if (oldDict != null)
-                Application.Current.Resources.MergedDictionaries.Remove(oldDict);
+                Current.Resources.MergedDictionaries.Remove(oldDict);
 
-            Application.Current.Resources.MergedDictionaries.Add(newDict);
+            Current.Resources.MergedDictionaries.Add(newDict);
         }
 
         #region 防止异常闪退

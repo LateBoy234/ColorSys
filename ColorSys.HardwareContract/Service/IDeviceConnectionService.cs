@@ -23,7 +23,7 @@ namespace ColorSys.HardwareContract.Service
         /// <summary>
         /// 断开当前设备
         /// </summary>
-        void Disconnect();
+        Task DisconnectAsync();
 
         /// <summary>
         /// 设备连接状态变更事件
@@ -38,5 +38,6 @@ namespace ColorSys.HardwareContract.Service
     {
         public IDevice Device { get; set; }
         public bool IsConnected { get; set; }
+        public string ConnectionType { get; set; } = string.Empty; // 连接方式类型
     }
 }
