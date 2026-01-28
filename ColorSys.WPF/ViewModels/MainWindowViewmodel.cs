@@ -3,9 +3,12 @@ using ColorSys.Domain.Config;
 using ColorSys.Domain.Model;
 using ColorSys.HardwareContract;
 using ColorSys.HardwareContract.Service;
+using ColorSys.HardwareContract.Strategy;
+using ColorSys.HardwareImplementation.Communication.CommParameter;
 using ColorSys.HardwareImplementation.Communication.PLC;
 using ColorSys.HardwareImplementation.SystemConfig;
 using ColorSys.Permission;
+using ColorSys.WPF.Resources;
 using ColorSys.WPF.Views;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -29,16 +32,26 @@ namespace ColorSys.WPF.ViewModels
       
        
         private readonly IDeviceConnectionService _connectionService;
+        private readonly IEnumerable<ICommStrategy> _commStrategies;
+        private readonly IEnumerable<IDeviceStrategy> _deviceStrategies;
 
-        public MainWindowViewmodel(IAuthService auth, INavigationService nav, IDeviceConnectionService connectionService)
+        public MainWindowViewmodel(
+            IAuthService auth, 
+            INavigationService nav, 
+            IDeviceConnectionService connectionService,
+            IEnumerable<ICommStrategy> commStrategies,
+            IEnumerable<IDeviceStrategy> deviceStrategies)
         {
             // 关键：监听 Hub 的变化
             _connectionService = connectionService;
-               _auth = auth;
+            _commStrategies = commStrategies;
+            _deviceStrategies = deviceStrategies;
+
+            _auth = auth;
             _nav = nav;
-            //ColorDevice = device;
+
             Title = "ColorSystem";
-            ConnectStatus= "连接";
+            ConnectStatus= LanguageSwith.GetString("S_ConnectOn");
             // 订阅设备变更事件
             _connectionService.DeviceChanged += OnDeviceChanged;
 
@@ -55,7 +68,114 @@ namespace ColorSys.WPF.ViewModels
                     RefreshPermissions();
             };
             RefreshPermissions();
+            
+            // 异步初始化配置并尝试自动连接
+            _ = InitializeAsync();
         }
+
+        /// <summary>
+        /// 初始化配置管理器并尝试自动连接
+        /// </summary>
+        private async Task InitializeAsync()
+        {
+            try
+            {
+                // 初始化配置管理器
+                await ConfigManager.Instance.InitializeAsync();
+                
+                // 尝试自动连接
+                await TryAutoConnectAsync();
+            }
+            catch (Exception ex)
+            {
+                // 记录错误但不影响程序启动
+                System.Diagnostics.Debug.WriteLine($"自动连接失败: {ex.Message}");
+            }
+        }
+        /// <summary>
+        /// 尝试使用上次保存的配置自动连接
+        /// </summary>
+        private async Task TryAutoConnectAsync()
+        {
+            var config = ConfigManager.Instance;
+            
+            // 获取上次的连接配置
+            var lastDeviceType = config.Get<string>("LastDeviceType");
+            var lastCommType = config.Get<string>("LastCommType");
+            
+            if (string.IsNullOrEmpty(lastDeviceType) || string.IsNullOrEmpty(lastCommType))
+            {
+                System.Diagnostics.Debug.WriteLine("没有找到上次的连接配置");
+                return;
+            }
+
+            try
+            {
+                // 查找对应的策略
+                var commStrategy = _commStrategies.FirstOrDefault(s => s.DisplayName == lastCommType);
+                var deviceStrategy = _deviceStrategies.FirstOrDefault(s => s.DeviceType.ToString() == lastDeviceType);
+                
+                if (commStrategy == null || deviceStrategy == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("找不到匹配的通讯或设备策略");
+                    return;
+                }
+
+                // 根据通讯类型加载参数
+                ICommParameters parameters = null;
+                
+                if (lastCommType.Contains("Serial") || lastCommType.Contains("串口"))
+                {
+                    parameters = new SerialParameters
+                    {
+                        PortName = config.Get<string>("Serial_PortName", ""),
+                        BaudRate = config.Get<int>("Serial_BaudRate", 9600),
+                        DataBits = config.Get<int>("Serial_DataBits", 8),
+                        Parity = config.GetEnum<ParityBit>("Serial_Parity", ParityBit.None),
+                        StopBits = config.GetEnum<StopBit>("Serial_StopBits", StopBit.One)
+                    };
+                }
+                else if (lastCommType.Contains("TCP") || lastCommType.Contains("网络"))
+                {
+                    parameters = new TcpParameters
+                    {
+                        IP = config.Get<string>("Tcp_IP", "192.168.1.100"),
+                        Port = config.Get<int>("Tcp_Port", 502)
+                    };
+                }
+                
+                if (parameters == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("无法创建连接参数");
+                    return;
+                }
+
+                // 创建通讯和设备
+                var comm = commStrategy.CreatCommunication(parameters);
+                var device = deviceStrategy.GetDevice(comm);
+                
+                // 尝试连接
+                System.Diagnostics.Debug.WriteLine($"尝试自动连接到 {lastDeviceType} 通过 {lastCommType}...");
+                
+                if (await device.ConnectAsync())
+                {
+                    CurrentDevice = device;
+                    ConnectionType = lastCommType; // 设置连接方式
+                    ConnectStatus = LanguageSwith.GetString("S_ConnectOff");
+                    System.Diagnostics.Debug.WriteLine("自动连接成功！");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("自动连接失败");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"自动连接异常: {ex.Message}");
+            }
+        }
+
+
 
         #region 权限属性（源生成）
         [ObservableProperty]
@@ -69,6 +189,18 @@ namespace ColorSys.WPF.ViewModels
 
         [ObservableProperty]
         private string _alarmMsg;
+
+        /// <summary>
+        /// 是否有设置权限（需要登录）
+        /// </summary>
+        [ObservableProperty]
+        private bool _canAccessSettings;
+
+        /// <summary>
+        /// 是否有导入导出权限（需要登录）
+        /// </summary>
+        [ObservableProperty]
+        private bool _canImportExport;
         #endregion
 
         #region 测试界面属性
@@ -80,20 +212,22 @@ namespace ColorSys.WPF.ViewModels
         {
             _nav.ShowLoginDialog();
             LoginCommand.NotifyCanExecuteChanged();
-            LogoutCommand.NotifyCanExecuteChanged();
+            LogOutCommand.NotifyCanExecuteChanged();
             LangUSCommand.NotifyCanExecuteChanged();
             langCNCommand.NotifyCanExecuteChanged();
+            RefreshPermissions(); // 刷新权限相关属性
         }
         private bool CanLogin()
         {
             return _auth.CurrentUser is null || _auth.IsExpired;
         }
         [RelayCommand(CanExecute = nameof(CanLoginOut))]
-        private void Logout()
+        private void LogOut()
         {
             _auth.Logout();
             LoginCommand.NotifyCanExecuteChanged();
-            LogoutCommand.NotifyCanExecuteChanged();
+            LogOutCommand.NotifyCanExecuteChanged();
+            RefreshPermissions(); // 刷新权限相关属性
         }
 
         private bool CanLoginOut()
@@ -113,7 +247,7 @@ namespace ColorSys.WPF.ViewModels
             App.ChangeLanguage("en-US");
         }
 
-        [RelayCommand]
+        [RelayCommand(CanExecute = nameof(IsDeviceConnected))]
         private void Massure()
         {
            // ColorDevice.RunTestAsync();
@@ -148,6 +282,10 @@ namespace ColorSys.WPF.ViewModels
             CanA = ok;                           // 所有人都有 A
             CanB = ok && user!.Role >= UserRole.Engineer;
             CanC = ok && user!.Role == UserRole.Admin;
+
+            // 设置和导入导出权限 - 需要登录
+            CanAccessSettings = ok;
+            CanImportExport = ok;
         }
         #endregion
 
@@ -158,10 +296,67 @@ namespace ColorSys.WPF.ViewModels
         [NotifyPropertyChangedFor(nameof(IsDeviceConnected))]
         [NotifyPropertyChangedFor(nameof(ConnectionStatus))]
         [NotifyPropertyChangedFor(nameof(DeviceTypeDisplay))]
-        private IDevice _currentDevice;
+        [NotifyPropertyChangedFor(nameof(ConnectionTypy))]
+        [NotifyPropertyChangedFor(nameof(ConnectionTypyIconKind))]
+        private IDevice? _currentDevice;
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(ConnectIconKind))]
         private string _connectStatus;
+
+        /// <summary>
+        /// 当前连接方式类型（Serial/TCP等）
+        /// </summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(ConnectionTypy))]
+        [NotifyPropertyChangedFor(nameof(ConnectionTypyIconKind))]
+        private string _connectionType = "";
+
+        /// <summary>
+        /// Returns the MaterialDesign icon kind based on connection status
+        /// </summary>
+        public string ConnectIconKind => _connectStatus == LanguageSwith.GetString("S_ConnectOff") ? "LinkVariant" : "LinkVariantOff";
+
+        /// <summary>
+        /// 根据连接方式返回对应的图标
+        /// </summary>
+        public string ConnectionTypyIconKind
+        {
+            get
+            {
+                if (!IsDeviceConnected) return "CloseCircleOutline";
+                
+                if (ConnectionType.Contains("Serial") || ConnectionType.Contains("串口"))
+                    return "Usb";
+                else if (ConnectionType.Contains("TCP") || ConnectionType.Contains("网络"))
+                    return "Ethernet";
+                else if (ConnectionType.Contains("Bluetooth") || ConnectionType.Contains("蓝牙"))
+                    return "Bluetooth";
+                else
+                    return "Connection";
+            }
+        }
+
+        /// <summary>
+        /// 根据连接方式返回对应的文本
+        /// </summary>
+        public string ConnectionTypy
+        {
+            get
+            {
+                if (!IsDeviceConnected) return "未连接";
+                
+                if (ConnectionType.Contains("Serial") || ConnectionType.Contains("串口"))
+                    return "串口";
+                else if (ConnectionType.Contains("TCP") || ConnectionType.Contains("网络"))
+                    return "网络";
+                else if (ConnectionType.Contains("Bluetooth") || ConnectionType.Contains("蓝牙"))
+                    return "蓝牙";
+                else
+                    return ConnectionType;
+            }
+        }
+
         public bool IsDeviceConnected
         {
             get => CurrentDevice != null&&CurrentDevice.IsConnected;
@@ -196,10 +391,10 @@ namespace ColorSys.WPF.ViewModels
             {
                 if (_currentDevice != null)
                 {
-                    _connectionService.Disconnect();
+                    await _connectionService.DisconnectAsync();
                     CurrentDevice = _connectionService.CurrentDevice;
                     // 显示连接成功消息
-                    ConnectStatus = "连接";
+                    ConnectStatus = LanguageSwith.GetString("S_ConnectOn");
                 }
                 else
                 {
@@ -208,12 +403,12 @@ namespace ColorSys.WPF.ViewModels
                     {
                         CurrentDevice = device;
                         // 显示连接成功消息
-                        ConnectStatus = "断开";
+                        ConnectStatus = LanguageSwith.GetString("S_ConnectOff");
                     }
                     else
                     {
                         // 显示连接失败消息
-                        ConnectStatus = "连接";
+                        ConnectStatus = LanguageSwith.GetString("S_ConnectOn");
                     }
                 }
             }
@@ -227,26 +422,31 @@ namespace ColorSys.WPF.ViewModels
             if (e.IsConnected)
             {
                 CurrentDevice = e.Device;
-                ConnectStatus = "断开";
+                ConnectionType = e.ConnectionType; // 设置连接方式
+                ConnectStatus = LanguageSwith.GetString("S_ConnectOff");
             }
             else
             {
                 CurrentDevice = null;
-                ConnectStatus = "连接";
+                ConnectionType = ""; // 清空连接方式
+                ConnectStatus = LanguageSwith.GetString("S_ConnectOn");
             }
             UpdateCommandStates();
         }
 
         private void UpdateCommandStates()
         {
-           MeasureCommand.NotifyCanExecuteChanged();
+            // 刷新测量相关命令（依赖设备连接状态）
+            MeasureCommand.NotifyCanExecuteChanged();
+            MassureCommand.NotifyCanExecuteChanged();
         }
         #endregion
 
         public void Dispose()
         {
             _connectionService.DeviceChanged -= OnDeviceChanged;
-            _connectionService.Disconnect();
+            // Fire and forget for disposal - consider implementing IAsyncDisposable if needed
+            _ = _connectionService.DisconnectAsync();
         }
 
         // 连接过程中的状态（打开对话框时、自动断开/重连时）
@@ -261,11 +461,11 @@ namespace ColorSys.WPF.ViewModels
                     // 显示进度
                     break;
                 case ConnectionState.Lost:
-                    ConnectStatus = "连接";
+                    ConnectStatus = LanguageSwith.GetString("S_ConnectOn");
                     CurrentDevice = null;
                    // UpdateCommandStates();
                    
-                    _connectionService.Disconnect();
+                    _ = _connectionService.DisconnectAsync();
                     _connectionService.DeviceChanged -= OnDeviceChanged;
                     // 显示警告
                     break;

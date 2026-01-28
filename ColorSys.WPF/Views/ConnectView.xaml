@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:ColorSys.HardwareImplementation.Communication.CommParamVm;assembly=ColorSys.HardwareImplementation"
         mc:Ignorable="d"
+        
         Title="设备连接" Height="550" Width="500"
         WindowStartupLocation="CenterOwner">
 

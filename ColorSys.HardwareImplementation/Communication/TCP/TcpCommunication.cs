@@ -1,10 +1,12 @@
 ﻿using ColorSys.Domain.Model;
 using ColorSys.HardwareContract;
 using ColorSys.HardwareImplementation.Communication.CommParameter;
+using Polly;
+using Polly.Timeout;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.IO;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -20,136 +22,100 @@ namespace ColorSys.HardwareImplementation.Communication.TCP
         private TcpClient? _tcp;
         private NetworkStream? _ns;
 
+        private readonly IAsyncPolicy _retryPolicy;
+        private readonly IAsyncPolicy _timeoutPolicy;
+
         public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
         public bool SupportsPlugDetect => false;  // 不支持硬件插拔
 
         private DateTime _lastReceiveTime;
         private CancellationTokenSource _cts;
+        private SemaphoreSlim _sendLock = new(1, 1);   // 写锁
         public bool IsConnected => _tcp?.Connected == true;
 
-        public TcpCommunication(TcpParameters p) => _p = p;
+        public TcpCommunication(TcpParameters p)
+        {
+            _p = p;
+            _retryPolicy = Policy
+           .Handle<SocketException>()
+           .WaitAndRetryAsync(3,
+               retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+               onRetry: (exception, timeSpan, retryCount, context) =>
+               {
+                  // _logger.LogWarning($"Retry {retryCount} after {timeSpan}");
+               });
+
+            _timeoutPolicy = Policy.TimeoutAsync(10, TimeoutStrategy.Pessimistic);
+        }
 
         public async Task ConnectAsync()
         {
-            _cts= new CancellationTokenSource();
-            _tcp = new TcpClient();
-            await _tcp.ConnectAsync(_p.IP, _p.Port);
-            _ns = _tcp.GetStream();
-            // 单循环：接收 + 心跳检测
-            _ = RunCommunicationLoop(_cts.Token); 
+            await _retryPolicy.ExecuteAsync(async ct =>
+            {
+                var tcp = new TcpClient();
+                await tcp.ConnectAsync(_p.IP, _p.Port, ct);
+                var ns = tcp.GetStream();
+
+                // 旧连接如果有，先干净关掉
+                _cts?.Cancel();
+                _tcp?.Close();
+
+                _tcp = tcp;
+                _ns = ns;
+                _cts = new CancellationTokenSource();
+
+                // 启动读写两条任务
+                _ = ReadLoop(_cts.Token);
+                _ = HeartLoop(_cts.Token);
+            }, CancellationToken.None);
         }
 
-        private async Task RunCommunicationLoop(CancellationToken ct)
+        // ① 读循环：阻塞 ReadAsync，按“长度前缀”拆帧
+        private async Task ReadLoop(CancellationToken ct)
         {
-            var buffer = new byte[256];
-            _lastReceiveTime = DateTime.Now;
-            try
+            var lenBuf = new byte[4];          // 假设 4 字节 Big-Endian 长度
+            while (!ct.IsCancellationRequested)
             {
-                while (!ct.IsCancellationRequested)
+                await ReadExactAsync(lenBuf, ct);                 // 必须读满 4 字节
+                var payloadLen = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(lenBuf, 0));
+                var payload = new byte[payloadLen];
+                await ReadExactAsync(payload, ct);                // 必须读满 payload
+
+                _lastReceiveTime = DateTime.Now;
+                ProcessData(payload);                             // 抛给业务
+            }
+        }
+
+       
+        // ② 心跳循环：定时写，带锁
+        private async Task HeartLoop(CancellationToken ct)
+        {
+            var pong = new byte[] { 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x01, 0x08 };
+            while (!ct.IsCancellationRequested)
+            {
+                await Task.Delay(5_000, ct);
+                var idle = DateTime.Now - _lastReceiveTime;
+                if (idle > TimeSpan.FromSeconds(5))
                 {
-                    // 非阻塞检测：是否有数据可读
-                    if (_ns.DataAvailable)
-                    {
-                        // 有数据，读取
-                        var n = await _ns.ReadAsync(buffer, 0, buffer.Length, ct);
-                        if (n == 0) break; // 远端断开
-
-                        _lastReceiveTime = DateTime.Now; // 更新最后接收时间
-                        ProcessData(buffer[..n]);
-                    }
-                    else
-                    {
-                        // 无数据：检查是否需要发心跳
-                        var idleTime = DateTime.Now - _lastReceiveTime;
-
-                        if (idleTime > TimeSpan.FromSeconds(5))
-                        {
-                            // 空闲超 5 秒，发心跳
-                           var alive= await SendHeartbeat();
-                            if (!alive)
-                            {
-                                StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs
-                                {
-                                    State = ConnectionState.Lost,
-                                    Message = "连接中断（心跳超时）",
-                                    CanReconnect = true
-                                });
-
-                                // TCP 可以尝试自动重连
-                                await AutoReconnect();
-                            }
-                            _lastReceiveTime = DateTime.Now; // 重置计时
-                        }
-                        else
-                        {
-                            // 短暂等待，避免 CPU 空转
-                            await Task.Delay(100, ct);
-                        }
-                    }
+                    await _sendLock.WaitAsync(ct);
+                    try { await _ns.WriteAsync(pong, ct); }
+                    finally { _sendLock.Release(); }
                 }
             }
-            catch (OperationCanceledException) { /* 正常取消 */ }
-            catch (Exception) { /* 异常断开 */ }
         }
 
-        /// <summary>
-        /// 自动重连
-        /// </summary>
-        /// <returns></returns>
-        private async Task AutoReconnect()
+        // 工具：保证读满指定长度
+        private async Task ReadExactAsync(byte[] buf, CancellationToken ct)
         {
-            StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs
+            int read = 0;
+            while (read < buf.Length)
             {
-                State = ConnectionState.Reconnecting,
-                Message = "正在尝试重连..."
-            });
-
-            for (int i = 0; i < 3; i++)
-            {
-                if (await SendHeartbeat())
-                {
-                    StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs
-                    {
-                        State = ConnectionState.Connected,
-                        Message = "重连成功"
-                    });
-                    return;
-                }
-                await Task.Delay(1000);
-            }
-
-            StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs
-            {
-                State = ConnectionState.Disconnected,
-                Message = "重连失败，请手动连接",
-                CanReconnect = false
-            });
-        }
-        private async Task<bool> SendHeartbeat()
-        {
-            try
-            {
-                //
-                var heartbeat = new byte[] { 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x01, 0x08 };
-                await _ns.WriteAsync(heartbeat);
-
-                // 等待响应（最多等 3 秒）
-                var responseBuffer = new byte[256];
-                _tcp.ReceiveTimeout = 3000;
-                var read = await _ns.ReadAsync(responseBuffer, 0, responseBuffer.Length);
-
-                if (read == 0)
-                {
-                    return false;
-                }
-                return true;
-            }
-            catch
-            {
-                return false;
-               // throw new Exception("心跳失败");
+                int n = await _ns.ReadAsync(buf.AsMemory(read), ct);
+                if (n == 0) throw new IOException("远端断开");
+                read += n;
             }
         }
+
         private void ProcessData(byte[] data)
         {
             // 处理收到的数据...
@@ -160,78 +126,62 @@ namespace ColorSys.HardwareImplementation.Communication.TCP
 
         public void Dispose()
         {
-            _ns?.Close();
-            _tcp?.Close();
-            _lock.Release();
+            _tcp?.Dispose();
         }
 
-        private readonly SemaphoreSlim _lock = new(1, 1);
-        public async Task<byte[]> SendAndReceiveAsync(byte[] request, int timeoutMs = 5000, CancellationToken token = default)
+        public async Task SendAsync(byte[] frame)
         {
-            await _lock.WaitAsync(token);
-            try
-            {
-                if (!IsConnected) throw new InvalidOperationException("ModbusTCP未连接");
+            // protocol.send("MEA", "std", 10000);
+            string s =  $"MEA std\n" ;
+            // Trace.TraceInformation("SEND:{0}", s);
+          
+            var bytes = Encoding.UTF8.GetBytes(s);
+            var packet = new byte[8 + bytes.Length];
 
-                using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
-
-                var frame = BuildMbapFrame(request);
-                await _ns.WriteAsync(frame, 0, frame.Length, cts.Token);
-                await _ns.FlushAsync(cts.Token);
-                cts.CancelAfter(timeoutMs);
-                // 2. 精确读取 MBAP 头部（7字节）- 阻塞直到收到7字节或超时
-                var mbap = await ReadExactAsync(7, cts.Token);
-                var length = BinaryPrimitives.ReadUInt16BigEndian(mbap.AsSpan(4, 2));
-
-                // 3. 根据长度读取 PDU 数据 - 阻塞直到收完或超时
-                var pdu = await ReadExactAsync(length, cts.Token);
-
-                return pdu; // 返回纯 PDU（不含 MBAP 头）
-            }
-            finally
-            {
-                _lock.Release();
-            }
+            BinaryPrimitives.WriteUInt32BigEndian(packet.AsSpan(0, 4), 1);
+            BinaryPrimitives.WriteUInt32BigEndian(packet.AsSpan(4, 4), (uint)bytes.Length);
+            bytes.CopyTo(packet, 8);
+            string ascii = Encoding.ASCII.GetString(packet, 0, packet.Length);
+            Trace.TraceInformation("SEND:{0}", ascii);
+            _ns.Write(packet, 0, packet.Length);   // 一次发完
+          //  await _ns!.WriteAsync(packet, 0, packet.Length);
         }
 
-        /// <summary>
-        /// 精确读取指定字节数 - 核心简化方法（类似事件的阻塞等待）
-        /// </summary>
-        private async Task<byte[]> ReadExactAsync(int count, CancellationToken token)
-        {
-            var buffer = new byte[count];
-            var read = 0;
-
-            while (read < count)
-            {
-                // ReadAsync 是异步阻塞的，有数据时立即返回，无数据时等待
-                var n = await _ns.ReadAsync(buffer, read, count - read, token);
-                if (n == 0) throw new IOException("连接已关闭");
-                read += n;
-            }
-
-            return buffer;
-        }
-
-        private int _transactionId;
-        private byte[] BuildMbapFrame(byte[] pdu)
-        {
-            var tid = (ushort)Interlocked.Increment(ref _transactionId);
-           // var tid = Interlocked.Increment(ref _transactionId);
-            var frame = new byte[7 + pdu.Length];
-
-            BinaryPrimitives.WriteUInt16BigEndian(frame.AsSpan(0, 2), tid);  // Transaction ID
-            BinaryPrimitives.WriteUInt16BigEndian(frame.AsSpan(2, 2), 0);     // Protocol ID (0=Modbus)
-            BinaryPrimitives.WriteUInt16BigEndian(frame.AsSpan(4, 2), (ushort)pdu.Length); // Length
-          //  frame[6] = _config.SlaveId;  // Unit ID
-
-            Array.Copy(pdu, 0, frame, 7, pdu.Length);
-            return frame;
-        }
         public async Task<bool> ReconnectAsync()
         {
-           await ConnectAsync();
-            return IsConnected;
+            StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs
+            {
+                State = ConnectionState.Reconnecting,
+                Message = "正在尝试重连..."
+            });
+
+            for (int i = 0; i < 3; i++)
+            {
+                // 先干净停掉旧管道
+                _cts?.Cancel();
+                _tcp?.Close();
+
+                // 再递归 ConnectAsync（重试策略会兜底）
+                await ConnectAsync();
+                if (IsConnected)
+                {
+                    StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs
+                    {
+                        State = ConnectionState.Connected,
+                        Message = "重连成功"
+                    });
+                    return true;
+                }
+                await Task.Delay(1000);
+            }
+
+            StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs
+            {
+                State = ConnectionState.Disconnected,
+                Message = "重连失败，请手动连接",
+                CanReconnect = false
+            });
+            return false;
         }
 
     }

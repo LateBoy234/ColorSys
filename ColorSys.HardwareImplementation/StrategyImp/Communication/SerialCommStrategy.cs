@@ -16,7 +16,7 @@ namespace ColorSys.HardwareImplementation.StrategyImp.Communication
         public string DisplayName => "串口 (RS232/485)";
 
 
-        public ICommunication creatCommunication(ICommParameters commParameters)
+        public ICommunication CreatCommunication(ICommParameters commParameters)
         {
             return new ModbusRtuSerial((SerialParameters)commParameters);
         }

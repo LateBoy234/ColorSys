@@ -7,6 +7,7 @@ using ColorSys.HardwareContract.Strategy;
 using ColorSys.HardwareImplementation.Communication.CommParameter;
 using ColorSys.HardwareImplementation.Communication.SeriaPort;
 using ColorSys.HardwareImplementation.Device;
+using ColorSys.HardwareImplementation.SystemConfig;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -83,6 +84,9 @@ namespace ColorSys.WPF.ViewModels
 
         // 用于传回主窗体的结果
         public IDevice DialogResult { get; private set; }
+        
+        // 用于传回连接方式类型
+        public string SelectedConnectionType { get; private set; } = string.Empty;
 
         [RelayCommand]
        
@@ -100,7 +104,7 @@ namespace ColorSys.WPF.ViewModels
                 var config = CurrentConfigViewModel.GetConfig();
 
                 // 2. 创建通讯
-                var comm = SelectedCommStrategy.creatCommunication(config);
+                var comm = SelectedCommStrategy.CreatCommunication(config);
 
                 // 3. 创建设备
                 var device = SelectedDeviceStrategy.GetDevice(comm);
@@ -120,8 +124,12 @@ namespace ColorSys.WPF.ViewModels
                 // 4. 连接
                 if (await device.ConnectAsync())
                 {
-                    // 成功，关闭窗口并返回设备
+                    // 成功，保存连接配置到ConfigManager
+                    await SaveConnectionConfigAsync(device.DeviceType, SelectedCommStrategy.DisplayName, config);
+                    
+                    // 关闭窗口并返回设备
                     DialogResult = device;
+                    SelectedConnectionType = SelectedCommStrategy.DisplayName; // 保存连接方式类型
                     win.DialogResult = true;
                     win?.Close();
                 }
@@ -133,6 +141,35 @@ namespace ColorSys.WPF.ViewModels
             catch (Exception ex)
             {
                 MessageBox.Show($"连接错误：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 保存连接配置到ConfigManager
+        /// </summary>
+        private async Task SaveConnectionConfigAsync(DeviceType deviceType, string commType, ICommParameters parameters)
+        {
+            var config = ConfigManager.Instance;
+            
+            // 保存设备类型
+            await config.SetAsync("LastDeviceType", deviceType.ToString());
+            
+            // 保存通讯类型
+            await config.SetAsync("LastCommType", commType);
+            
+            // 根据通讯类型保存参数
+            if (parameters is SerialParameters serialParams)
+            {
+                await config.SetAsync("Serial_PortName", serialParams.PortName);
+                await config.SetAsync("Serial_BaudRate", serialParams.BaudRate);
+                await config.SetAsync("Serial_DataBits", serialParams.DataBits);
+                await config.SetAsync("Serial_Parity", serialParams.Parity.ToString());
+                await config.SetAsync("Serial_StopBits", serialParams.StopBits.ToString());
+            }
+            else if (parameters is TcpParameters tcpParams)
+            {
+                await config.SetAsync("Tcp_IP", tcpParams.IP);
+                await config.SetAsync("Tcp_Port", tcpParams.Port);
             }
         }
 
