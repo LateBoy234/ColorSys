@@ -27,9 +27,16 @@ namespace ColorSys.HardwareImplementation.SystemConfig
         public ConfigManager()
         {
             _repository = new JsonConfigRepository();
-            _cache=new ConcurrentDictionary<string, string>(_repository .LoadAsync().Result);
+            _cache=new ConcurrentDictionary<string, string>();
         }
-       
+
+      
+        public async Task InitializeAsync()
+        {
+            var data = await _repository.LoadAsync().ConfigureAwait(false);
+            foreach (var kv in data)
+                _cache[kv.Key] = kv.Value;
+        }
         public T? Get<T>(string key, T? defaultValue = default)
         {
             return _cache.TryGetValue(key, out var val)
@@ -37,10 +44,10 @@ namespace ColorSys.HardwareImplementation.SystemConfig
             : defaultValue;
         }
 
-        public void Set<T>(string key, T value)
+        public async Task SetAsync<T>(string key, T value)
         {
-            _cache[key] = value?.ToString()??string.Empty;
-            _repository.SaveAsync(_cache).ConfigureAwait(false).GetAwaiter().GetResult();
+            _cache[key] = value?.ToString() ?? string.Empty;
+            await _repository.SaveAsync(_cache);
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(key));
         }
 
@@ -51,10 +58,10 @@ namespace ColorSys.HardwareImplementation.SystemConfig
             return Enum.TryParse<TEnum>(str, out var val) ? val : defaultValue;
         }
 
-        public void SetEnum<TEnum>(string key, TEnum value)
+        public async Task SetEnum<TEnum>(string key, TEnum value)
             where TEnum : struct, Enum
         {
-            Set(key, value.ToString());   // 存字符串
+           await SetAsync(key, value.ToString());   // 存字符串
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

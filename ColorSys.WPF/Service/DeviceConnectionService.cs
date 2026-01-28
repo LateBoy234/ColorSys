@@ -59,14 +59,15 @@ namespace ColorSys.WPF.Service
             if (result == true && vm.DialogResult != null)
             {
                 // 断开旧设备
-                Disconnect();
+               await DisconnectAsync();
 
                 // 设置新设备
                 CurrentDevice = vm.DialogResult;
                 DeviceChanged?.Invoke(this, new DeviceConnectedEventArgs
                 {
                     Device = CurrentDevice,
-                    IsConnected = true
+                    IsConnected = true,
+                    ConnectionType = vm.SelectedConnectionType // 传递连接方式类型
                 });
 
                 return CurrentDevice;
@@ -75,18 +76,34 @@ namespace ColorSys.WPF.Service
             return null;
         }
 
-        public void Disconnect()
+        public async Task DisconnectAsync()
         {
             if (CurrentDevice != null)
             {
-                CurrentDevice.Dispose();
-                DeviceChanged?.Invoke(this, new DeviceConnectedEventArgs
+                try
                 {
-                    Device = CurrentDevice,
-                    IsConnected = false
-                });
-                CurrentDevice = null;
+                    if (CurrentDevice is IAsyncDisposable asyncDisposable)
+                        await asyncDisposable.DisposeAsync();
+                    else
+                        CurrentDevice.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    //_logger.LogError(ex, "Error disposing device");
+                }
+                finally
+                {
+                    var device = CurrentDevice;
+                    CurrentDevice = null;
+
+                    DeviceChanged?.Invoke(this, new DeviceConnectedEventArgs
+                    {
+                        Device = device,
+                        IsConnected = false
+                    });
+                }
             }
         }
+
     }
 }

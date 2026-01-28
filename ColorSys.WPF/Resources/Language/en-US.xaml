@@ -7,5 +7,7 @@
 	<s:String x:Key="S_LangCN">Chinese</s:String>
 	<s:String x:Key="S_LangUS">English</s:String>
     <s:String x:Key="S_Setting">Setting</s:String>
+    <s:String x:Key="S_ConnectOff">Disconnect</s:String>
+    <s:String x:Key="S_ConnectOn">Connect</s:String>
 </ResourceDictionary>
 

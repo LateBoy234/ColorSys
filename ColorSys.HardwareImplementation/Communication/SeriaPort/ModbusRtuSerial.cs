@@ -57,8 +57,9 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
                     Message = $"串口 {_p.PortName} 已连接"
                 });
             }
-            catch
+            catch (Exception ex)
             {
+              //  _logger.LogError(ex, "Unexpected heartbeat failure");
                 throw;
             }
 
@@ -96,6 +97,9 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
             };
             _unplugWatcher.Start();
         }
+
+
+        private readonly SemaphoreSlim _reconnectLock = new(1, 1);
         /// <summary>
         /// 启动自动重连监听
         /// </summary>
@@ -111,25 +115,28 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
                     "WHERE TargetInstance ISA 'Win32_SerialPort'");
 
                 _plugWatcher = new ManagementEventWatcher(plugQuery);
-                _plugWatcher.EventArrived += async (s, e) =>
+                _plugWatcher.EventArrived += (s, e) =>
                 {
-                    var port = GetPortNameFromWmi(e.NewEvent);
-                    Debug.WriteLine($"[WMI] 插入事件: {port}, 目标: {_p.PortName}");
-
-                    if (port == _p.PortName)
+                    _ = Task.Run(async () =>
                     {
-                        InvokeStateChanged(ConnectionState.Reconnecting, "检测到设备，正在重连...");
-
-                        await Task.Delay(1000);  // 等待设备初始化
-
-                        await ConnectAsync();
-
-                        if (IsConnected)
+                        try
                         {
-                            InvokeStateChanged(ConnectionState.Connected, "自动重连成功");
-                            _plugWatcher?.Stop();  // 重连成功，停止监听插入
+                            await _reconnectLock.WaitAsync();
+                            var port = GetPortNameFromWmi(e.NewEvent);
+                            if (port == _p.PortName)
+                            {
+                                await ReconnectAsync();
+                            }
                         }
-                    }
+                        catch (Exception ex)
+                        {
+                           // _logger.LogError(ex, "Reconnect failed");
+                        }
+                        finally
+                        {
+                            _reconnectLock.Release();
+                        }
+                    });
                 };
                 _plugWatcher.Start();
 
@@ -256,6 +263,9 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
 
         private sealed class RingBuffer
         {
+
+            private readonly object _bufferLock = new();
+
             private readonly byte[] _buf;
             private int _write;
             private int _read;
@@ -264,8 +274,13 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
             public RingBuffer(int size) => _buf = new byte[size];
             public void Append(ReadOnlySpan<byte> data)
             {
-                data.CopyTo(_buf.AsSpan(_write));
-                _write += data.Length;
+                lock (_bufferLock)
+                {
+                    data.CopyTo(_buf.AsSpan(_write));
+                    _write += data.Length;
+                }
+              //  data.CopyTo(_buf.AsSpan(_write));
+                //_write += data.Length;
             }
             public void Skip(int cnt) => _read += cnt;
         }
@@ -292,8 +307,6 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
         }
 
         public bool IsConnected => _port?.IsOpen == true;
-
-
     }
 
 

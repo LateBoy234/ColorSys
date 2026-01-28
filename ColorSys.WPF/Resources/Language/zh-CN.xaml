@@ -6,4 +6,6 @@
 	<s:String x:Key="S_LangCN">中文</s:String>
 	<s:String x:Key="S_LangUS">英文</s:String>
     <s:String x:Key="S_Setting">设置</s:String>
+    <s:String x:Key="S_ConnectOff">断开设备</s:String>
+    <s:String x:Key="S_ConnectOn">连接设备</s:String>
 </ResourceDictionary>

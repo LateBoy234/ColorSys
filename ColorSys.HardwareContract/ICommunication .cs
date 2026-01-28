@@ -4,7 +4,7 @@ namespace ColorSys.HardwareContract
 {
     public interface  ICommunication :IDisposable
     {
-         Task ConnectAsync();
+        Task ConnectAsync();
 
          bool IsConnected { get; }
 
