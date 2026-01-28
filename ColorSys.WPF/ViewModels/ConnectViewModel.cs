@@ -58,7 +58,9 @@ namespace ColorSys.WPF.ViewModels
         public IReadOnlyList<ICommStrategy> CommStrategies => _commStrategies;
         public IReadOnlyList<IDeviceStrategy> DeviceStrategies => _deviceStrategies;
 
-        // ========== 选中项（关键：选中策略时自动创建配置VM）==========
+
+
+        // ========== 选中项（选中策略时自动创建配置VM）==========
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(CurrentConfigViewModel))]  // 联动通知
@@ -74,7 +76,6 @@ namespace ColorSys.WPF.ViewModels
         private IDeviceStrategy _selectedDeviceStrategy;
 
         // ========== 动态配置VM（XAML ContentControl 绑这个）==========
-
         [ObservableProperty]
         private IConfigViewModel _currentConfigViewModel;
 

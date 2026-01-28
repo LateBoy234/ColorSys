@@ -18,6 +18,11 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
     {
         private readonly SerialParameters _p;
 
+        private readonly List<byte> _receiveBuffer = new();
+        private TaskCompletionSource<byte[]> _receiveTcs;
+        private readonly object _dataLock = new();
+        private CancellationTokenSource _receiveCts;
+
         public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
         public bool SupportsPlugDetect => true;  // 支持 WMI 检测
 
@@ -201,14 +206,52 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
         /// <param name="e"></param>
         private void OnData(object sender, SerialDataReceivedEventArgs e)
         {
-            // 简单示例：按 Modbus 长度拼帧
-            var sp = (SerialPort)sender!;
-            var len = sp.BytesToRead;
-            var buf = new byte[len];
-            sp.Read(buf, 0, len);
+           lock(_dataLock)
+            {
+                if(_receiveTcs == null)
+                {
+                    //没有等待中的任务，忽略
+                    return;
+                }
+                try
+                {
+                    var bytesToReads = _port.BytesToRead;
+                    var buffs= new byte[bytesToReads];
+                    _port.Read(buffs, 0, bytesToReads);
+                    _receiveBuffer.AddRange(buffs);
+                    //检查是否接收完成（根据实际协议调整判断逻辑）
+                    if (IsFrameComplete(_receiveBuffer))
+                    {
+                        _receiveTcs.TrySetResult(_receiveBuffer.ToArray());
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _receiveTcs.TrySetException(ex);
+                }
 
-            if (TryExtractFrame(buf, out var frame))
-                _frameSubject.OnNext(frame);
+            }
+        }
+
+        /// <summary>
+        /// 判断帧是否完整 
+        /// </summary>
+        private bool IsFrameComplete(List<byte> buffer)
+        {
+            if (buffer.Count < 5) return false; // 最小帧长度
+
+            // 示例1：固定长度帧（如你的协议 0x55 0xAA ...）
+            // 假设第4字节是长度字段
+            int expectedLen = buffer[3] + 5; // 头(2) + 命令(1) + 长度(1) + 数据 + 校验(1)
+            return buffer.Count >= expectedLen;
+
+            // 示例2：以特定字节结尾（如 \r\n）
+            // return buffer.Count >= 2 && 
+            //        buffer[^2] == 0x0D && 
+            //        buffer[^1] == 0x0A;
+
+            // 示例3：超时判断（配合定时器）
+            // return false; // 由超时定时器触发完成
         }
         private static readonly RingBuffer s_buffer = new(512);
         /// <summary>
@@ -239,17 +282,6 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
                 if (s_buffer.Length < frameLen) return false; // 还不够，继续等
 
                 ReadOnlySpan<byte> candidate = span.Slice(head, frameLen);
-                //if (Crc16Modbus(candidate[..^2]) == BitConverter.ToUInt16(candidate[^2..]))
-                //{
-                //    frame = candidate.ToArray();
-                //    s_buffer.Skip(frameLen);        // 把这帧从缓冲区扔掉
-                //    return true;
-                //}
-                //else
-                //{
-                //    // CRC 错，滑动 1 字节继续找
-                //    s_buffer.Skip(1);
-                //}
             }
             return false;
         }
@@ -273,22 +305,37 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
 
         public void Dispose()
         {
-            _port?.Dispose();
-            _port = null;
+            if (_port?.IsOpen == true)
+            {
+                _port.DataReceived -= OnData;
+                _port.Close();
+                _port.Dispose();
+                _port = null;
+            }
         }
 
-        public Task SendAsync(byte[] frame)
+        public async Task<byte[]> SendAndReceiveAsync( byte[] request, int timeoutMs = 5000, CancellationToken token = default)
         {
-            try
+            lock(_dataLock)
             {
-                _port.Write(frame, 0, frame.Length);
-                return Task.CompletedTask;
+                if(_receiveTcs!=null&&!_receiveTcs.Task.IsCompleted)
+                {
+                    throw new InvalidOperationException("已有等待中的接收操作");
+                }
+                _receiveBuffer.Clear();
+                _receiveTcs = new TaskCompletionSource<byte[]>();
+                _receiveCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+                _receiveCts.CancelAfter(timeoutMs);
             }
-            catch (Exception)
+            //注册取消回调
+            using (_receiveCts.Token.Register(()=>_receiveTcs.TrySetCanceled()))
             {
-
-                throw;
+              await  _port.BaseStream.WriteAsync(request, 0, request.Length,token);
+               await _port.BaseStream.FlushAsync(token);
+                // 等待接收完成（由事件触发）
+                return await _receiveTcs.Task;
             }
+               
         }
 
         public bool IsConnected => _port?.IsOpen == true;

@@ -1,31 +1,28 @@
 ﻿using ColorSys.Domain.Model;
 using ColorSys.HardwareContract;
 using ColorSys.HardwareContract.Model;
-using ColorSys.HardwareImplementation.Communication.SeriaPort;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive.Subjects;
-using System.Runtime.InteropServices.JavaScript;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace ColorSys.HardwareImplementation.Device
 {
-    public  class PTSInstrument : IDevice
+    public class CRInstrument : IDevice
     {
-        
-
         private readonly ICommunication _comm;
-
-        public PTSInstrument(ICommunication comm)   // Autofac 自动注入
+        public CRInstrument(ICommunication communication)
         {
-            _comm = comm;
+            _comm = communication;
         }
-        public DeviceType DeviceType => DeviceType.PTS;
+        public DeviceType DeviceType => DeviceType.CR;
 
-        public bool IsConnected => _comm.IsConnected;
+        public bool IsConnected => Comm.IsConnected;
+
         public ICommunication Comm => _comm;
+
+       
 
         public async Task<bool> ConnectAsync()
         {
@@ -33,13 +30,13 @@ namespace ColorSys.HardwareImplementation.Device
             if (!_comm.IsConnected)
             {
                 return false;
-            } 
+            }
             return true;
         }
 
         public void Dispose()
         {
-            Comm.Dispose();
+            Comm.Dispose(); ;
         }
 
         public async Task<TestModel> RunTestAsync(CancellationToken token = default)
@@ -47,7 +44,6 @@ namespace ColorSys.HardwareImplementation.Device
             var request = new byte[] { 0x55, 0xaa, 0xa1, 0x00, 0x00, 0x00, 0x02, 0x00, 0x02 };
             var response = await _comm.SendAndReceiveAsync(request, timeoutMs: 3000, token);
             return await Task.Delay(1000).ContinueWith(x => new TestModel());
-           // return await Comm.ReceiveAsync<TestModel>(token);
         }
     }
 }

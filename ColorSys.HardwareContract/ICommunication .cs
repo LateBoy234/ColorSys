@@ -8,10 +8,14 @@ namespace ColorSys.HardwareContract
 
          bool IsConnected { get; }
 
-        // ① 主动发指令
-        Task SendAsync(byte[] frame);
-
-     
+        /// <summary>
+        /// 发送数据并等待响应
+        /// </summary>
+        /// <param name="request">请求数据</param>
+        /// <param name="timeoutMs">超时时间(毫秒)</param>
+        /// <param name="token">取消令牌</param>
+        /// <returns>响应数据</returns>
+        Task<byte[]> SendAndReceiveAsync(byte[] request, int timeoutMs = 5000, CancellationToken token = default);
 
         // 统一状态事件（所有实现都必须支持）
         event EventHandler<ConnectionStateChangedEventArgs> StateChanged;

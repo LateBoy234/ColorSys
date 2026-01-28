@@ -2,7 +2,9 @@
 using ColorSys.HardwareContract;
 using ColorSys.HardwareImplementation.Communication.CommParameter;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -158,13 +160,74 @@ namespace ColorSys.HardwareImplementation.Communication.TCP
 
         public void Dispose()
         {
-            _tcp?.Dispose();
-            //_frameSubject.OnCompleted();
-            //_frameSubject.Dispose();
+            _ns?.Close();
+            _tcp?.Close();
+            _lock.Release();
         }
 
-        public async Task SendAsync(byte[] frame) => await _ns!.WriteAsync(frame);
+        private readonly SemaphoreSlim _lock = new(1, 1);
+        public async Task<byte[]> SendAndReceiveAsync(byte[] request, int timeoutMs = 5000, CancellationToken token = default)
+        {
+            await _lock.WaitAsync(token);
+            try
+            {
+                if (!IsConnected) throw new InvalidOperationException("ModbusTCP未连接");
 
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+
+                var frame = BuildMbapFrame(request);
+                await _ns.WriteAsync(frame, 0, frame.Length, cts.Token);
+                await _ns.FlushAsync(cts.Token);
+                cts.CancelAfter(timeoutMs);
+                // 2. 精确读取 MBAP 头部（7字节）- 阻塞直到收到7字节或超时
+                var mbap = await ReadExactAsync(7, cts.Token);
+                var length = BinaryPrimitives.ReadUInt16BigEndian(mbap.AsSpan(4, 2));
+
+                // 3. 根据长度读取 PDU 数据 - 阻塞直到收完或超时
+                var pdu = await ReadExactAsync(length, cts.Token);
+
+                return pdu; // 返回纯 PDU（不含 MBAP 头）
+            }
+            finally
+            {
+                _lock.Release();
+            }
+        }
+
+        /// <summary>
+        /// 精确读取指定字节数 - 核心简化方法（类似事件的阻塞等待）
+        /// </summary>
+        private async Task<byte[]> ReadExactAsync(int count, CancellationToken token)
+        {
+            var buffer = new byte[count];
+            var read = 0;
+
+            while (read < count)
+            {
+                // ReadAsync 是异步阻塞的，有数据时立即返回，无数据时等待
+                var n = await _ns.ReadAsync(buffer, read, count - read, token);
+                if (n == 0) throw new IOException("连接已关闭");
+                read += n;
+            }
+
+            return buffer;
+        }
+
+        private int _transactionId;
+        private byte[] BuildMbapFrame(byte[] pdu)
+        {
+            var tid = (ushort)Interlocked.Increment(ref _transactionId);
+           // var tid = Interlocked.Increment(ref _transactionId);
+            var frame = new byte[7 + pdu.Length];
+
+            BinaryPrimitives.WriteUInt16BigEndian(frame.AsSpan(0, 2), tid);  // Transaction ID
+            BinaryPrimitives.WriteUInt16BigEndian(frame.AsSpan(2, 2), 0);     // Protocol ID (0=Modbus)
+            BinaryPrimitives.WriteUInt16BigEndian(frame.AsSpan(4, 2), (ushort)pdu.Length); // Length
+          //  frame[6] = _config.SlaveId;  // Unit ID
+
+            Array.Copy(pdu, 0, frame, 7, pdu.Length);
+            return frame;
+        }
         public async Task<bool> ReconnectAsync()
         {
            await ConnectAsync();
