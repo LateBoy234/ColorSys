@@ -22,6 +22,7 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
         public bool SupportsPlugDetect => throw new NotImplementedException();
 
         public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
+        public event EventHandler<byte[]> DataReceived;
 
         //public async Task ConnectAsync()
         //{

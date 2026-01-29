@@ -24,6 +24,7 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
         private CancellationTokenSource _receiveCts;
 
         public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
+        public event EventHandler<byte[]> DataReceived;
         public bool SupportsPlugDetect => true;  // 支持 WMI 检测
 
         private ManagementEventWatcher _plugWatcher;
@@ -213,52 +214,13 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
         /// <param name="e"></param>
         private void OnData(object sender, SerialDataReceivedEventArgs e)
         {
-           lock(_dataLock)
-            {
-                if(_receiveTcs == null)
-                {
-                    //没有等待中的任务，忽略
-                    return;
-                }
-                try
-                {
-                    var bytesToReads = _port.BytesToRead;
-                    var buffs= new byte[bytesToReads];
-                    _port.Read(buffs, 0, bytesToReads);
-                    _receiveBuffer.AddRange(buffs);
-                    //检查是否接收完成（根据实际协议调整判断逻辑）
-                    if (IsFrameComplete(_receiveBuffer))
-                    {
-                        _receiveTcs.TrySetResult(_receiveBuffer.ToArray());
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _receiveTcs.TrySetException(ex);
-                }
+            // 简单示例：按 Modbus 长度拼帧
+            var sp = (SerialPort)sender!;
+            var len = sp.BytesToRead;
+            var buf = new byte[len];
+            sp.Read(buf, 0, len);
 
-            }
-        }
-
-        /// <summary>
-        /// 判断帧是否完整 
-        /// </summary>
-        private bool IsFrameComplete(List<byte> buffer)
-        {
-            if (buffer.Count < 5) return false; // 最小帧长度
-
-            // 示例1：固定长度帧（如你的协议 0x55 0xAA ...）
-            // 假设第4字节是长度字段
-            int expectedLen = buffer[3] + 5; // 头(2) + 命令(1) + 长度(1) + 数据 + 校验(1)
-            return buffer.Count >= expectedLen;
-
-            // 示例2：以特定字节结尾（如 \r\n）
-            // return buffer.Count >= 2 && 
-            //        buffer[^2] == 0x0D && 
-            //        buffer[^1] == 0x0A;
-
-            // 示例3：超时判断（配合定时器）
-            // return false; // 由超时定时器触发完成
+            DataReceived?.Invoke(this, buf);
         }
         private static readonly RingBuffer s_buffer = new(512);
         /// <summary>

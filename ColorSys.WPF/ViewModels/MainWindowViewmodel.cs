@@ -368,11 +368,6 @@ namespace ColorSys.WPF.ViewModels
 
         public string DeviceTypeDisplay => CurrentDevice?.DeviceType.ToString() ?? "无";
 
-        //[RelayCommand(CanExecute = nameof(IsDeviceConnected))]
-        //private void Disconnect()
-        //{
-        //    _connectionService.Disconnect();
-        //}
 
         [RelayCommand(CanExecute = nameof(IsDeviceConnected))]
         private async Task MeasureAsync()
