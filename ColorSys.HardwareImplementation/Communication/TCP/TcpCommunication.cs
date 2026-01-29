@@ -26,6 +26,7 @@ namespace ColorSys.HardwareImplementation.Communication.TCP
         private readonly IAsyncPolicy _timeoutPolicy;
 
         public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
+        public event EventHandler<byte[]> DataReceived;
         public bool SupportsPlugDetect => false;  // 不支持硬件插拔
 
         private DateTime _lastReceiveTime;
@@ -70,19 +71,32 @@ namespace ColorSys.HardwareImplementation.Communication.TCP
             }, CancellationToken.None);
         }
 
-        // ① 读循环：阻塞 ReadAsync，按“长度前缀”拆帧
+        // ① 读循环：不断读取数据并触发 DataReceived 事件
         private async Task ReadLoop(CancellationToken ct)
         {
-            var lenBuf = new byte[4];          // 假设 4 字节 Big-Endian 长度
+            var buffer = new byte[4096];
             while (!ct.IsCancellationRequested)
             {
-                await ReadExactAsync(lenBuf, ct);                 // 必须读满 4 字节
-                var payloadLen = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(lenBuf, 0));
-                var payload = new byte[payloadLen];
-                await ReadExactAsync(payload, ct);                // 必须读满 payload
+                try
+                {
+                    int n = await _ns.ReadAsync(buffer, 0, buffer.Length, ct);
+                    if (n == 0) throw new IOException("远端断开");
 
-                _lastReceiveTime = DateTime.Now;
-                ProcessData(payload);                             // 抛给业务
+                    var data = new byte[n];
+                    Array.Copy(buffer, 0, data, 0, n);
+
+                    _lastReceiveTime = DateTime.Now;
+                    DataReceived?.Invoke(this, data);
+                }
+                catch (Exception ex) when (!(ex is OperationCanceledException))
+                {
+                    StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs
+                    {
+                        State = ConnectionState.Disconnected,
+                        Message = $"读取出错: {ex.Message}"
+                    });
+                    break;
+                }
             }
         }
 
@@ -118,8 +132,7 @@ namespace ColorSys.HardwareImplementation.Communication.TCP
 
         private void ProcessData(byte[] data)
         {
-            // 处理收到的数据...
-            // _frameSubject.OnNext(data);
+            DataReceived?.Invoke(this, data);
         }
 
       

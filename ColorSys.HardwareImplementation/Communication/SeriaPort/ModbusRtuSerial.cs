@@ -19,6 +19,7 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
         private readonly SerialParameters _p;
 
         public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
+        public event EventHandler<byte[]> DataReceived;
         public bool SupportsPlugDetect => true;  // 支持 WMI 检测
 
         private ManagementEventWatcher _plugWatcher;
@@ -214,8 +215,7 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
             var buf = new byte[len];
             sp.Read(buf, 0, len);
 
-            if (TryExtractFrame(buf, out var frame))
-                _frameSubject.OnNext(frame);
+            DataReceived?.Invoke(this, buf);
         }
         private static readonly RingBuffer s_buffer = new(512);
         /// <summary>

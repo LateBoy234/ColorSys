@@ -11,6 +11,9 @@ namespace ColorSys.HardwareContract
         // ① 主动发指令
         Task SendAsync(byte[] frame);
 
+        // ② 数据接收事件
+        event EventHandler<byte[]> DataReceived;
+
      
 
         // 统一状态事件（所有实现都必须支持）
