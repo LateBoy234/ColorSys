@@ -9,9 +9,12 @@ using System.Threading.Tasks;
 
 namespace ColorSys.HardwareImplementation.Device
 {
-    public class CRInstrument : IDevice
+    public class CRInstrument : IDevice, IMeasureMent
     {
         private readonly ICommunication _comm;
+        
+        public event EventHandler<TestModel> DataReceived;
+        
         public CRInstrument(ICommunication communication)
         {
             _comm = communication;
@@ -41,9 +44,16 @@ namespace ColorSys.HardwareImplementation.Device
 
         public async Task<TestModel> RunTestAsync(CancellationToken token = default)
         {
-            var request = new byte[] { 0x55, 0xaa, 0xa1, 0x00, 0x00, 0x00, 0x02, 0x00, 0x02 };
-            var response = await _comm.SendAndReceiveAsync(request, timeoutMs: 3000, token);
-            return await Task.Delay(1000).ContinueWith(x => new TestModel());
+            //var response = await SendRequestAsync(0xA6);
+
+            //if (response != null && response.IsSuccess)
+            //{
+            //    // 这里根据 response.Data 解析测量数据
+            //    // 例如：解析 L*, a*, b* 等
+            //    return ParseTestData(response.Data);
+            //}
+            await Task.Delay(100); // 模拟异步操作
+            return new TestModel(); // 或者抛出异常/返回错误状态
         }
     }
 }

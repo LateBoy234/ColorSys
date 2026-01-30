@@ -2,6 +2,7 @@
 using ColorSys.Domain.Config;
 using ColorSys.Domain.Model;
 using ColorSys.HardwareContract;
+using ColorSys.HardwareContract.Model;
 using ColorSys.HardwareContract.Service;
 using ColorSys.HardwareContract.Strategy;
 using ColorSys.HardwareImplementation.Communication.CommParameter;
@@ -368,6 +369,23 @@ namespace ColorSys.WPF.ViewModels
 
         public string DeviceTypeDisplay => CurrentDevice?.DeviceType.ToString() ?? "无";
 
+        #region Measurement Data Properties
+        [ObservableProperty]
+        private string _measurementResult = "Waiting for data...";
+        
+        [ObservableProperty]
+        private string _lValue = "--";
+        
+        [ObservableProperty]
+        private string _aValue = "--";
+        
+        [ObservableProperty]
+        private string _bValue = "--";
+        
+        [ObservableProperty]
+        private DateTime _lastMeasurementTime = DateTime.MinValue;
+        #endregion
+
 
         [RelayCommand(CanExecute = nameof(IsDeviceConnected))]
         private async Task MeasureAsync()
@@ -375,7 +393,17 @@ namespace ColorSys.WPF.ViewModels
             if (CurrentDevice is IMeasureMent measurement)
             {
                 var result = await measurement.RunTestAsync();
-                // 处理测量结果...
+                
+                // Also update the UI with the manual measurement result
+                if (result.DataValues != null && result.DataValues.Length >= 3)
+                {
+                    LValue = result.DataValues[0].ToString("F2");
+                    AValue = result.DataValues[1].ToString("F2");
+                    BValue = result.DataValues[2].ToString("F2");
+                }
+                
+                LastMeasurementTime = result.DateTime;
+                MeasurementResult = $"Manual measurement at {result.DateTime:HH:mm:ss}";
             }
         }
 
@@ -414,11 +442,23 @@ namespace ColorSys.WPF.ViewModels
         }
         private void OnDeviceChanged(object sender, DeviceConnectedEventArgs e)
         {
+            // 先取消之前的订阅
+            if (CurrentDevice is IMeasureMent prevMeasurementDevice)
+            {
+                prevMeasurementDevice.DataReceived -= OnDataReceivedFromDevice;
+            }
+            
             if (e.IsConnected)
             {
                 CurrentDevice = e.Device;
                 ConnectionType = e.ConnectionType; // 设置连接方式
                 ConnectStatus = LanguageSwith.GetString("S_ConnectOff");
+                
+                // 订阅新的设备数据接收事件
+                if (CurrentDevice is IMeasureMent newMeasurementDevice)
+                {
+                    newMeasurementDevice.DataReceived += OnDataReceivedFromDevice;
+                }
             }
             else
             {
@@ -439,16 +479,37 @@ namespace ColorSys.WPF.ViewModels
 
         public void Dispose()
         {
+            // Unsubscribe from device data received event
+            if (CurrentDevice is IMeasureMent measurementDevice)
+            {
+                measurementDevice.DataReceived -= OnDataReceivedFromDevice;
+            }
+            
             _connectionService.DeviceChanged -= OnDeviceChanged;
             // Fire and forget for disposal - consider implementing IAsyncDisposable if needed
             _ = _connectionService.DisconnectAsync();
         }
 
+        // 处理从设备接收到的数据
+        private void OnDataReceivedFromDevice(object sender, TestModel testModel)
+        {
+            // 更新UI上的测量数据显示
+            if (testModel.DataValues != null && testModel.DataValues.Length >= 3)
+            {
+                LValue = testModel.DataValues[0].ToString("F2");
+                AValue = testModel.DataValues[1].ToString("F2");
+                BValue = testModel.DataValues[2].ToString("F2");
+            }
+                    
+            LastMeasurementTime = testModel.DateTime;
+            MeasurementResult = $"Measurement received at {testModel.DateTime:HH:mm:ss}";
+        }
+        
         // 连接过程中的状态（打开对话框时、自动断开/重连时）
         private void OnConnectionStatusChanged(object sender, ConnectionStateChangedEventArgs e)
         {
            // ConnectionState = e.State;
-
+        
             // 可以在这里做更多 UI 反馈
             switch (e.State)
             {
@@ -459,7 +520,13 @@ namespace ColorSys.WPF.ViewModels
                     ConnectStatus = LanguageSwith.GetString("S_ConnectOn");
                     CurrentDevice = null;
                    // UpdateCommandStates();
-                   
+                            
+                    // 取消订阅数据接收事件
+                    if (CurrentDevice is IMeasureMent measurementDevice)
+                    {
+                        measurementDevice.DataReceived -= OnDataReceivedFromDevice;
+                    }
+                            
                     _ = _connectionService.DisconnectAsync();
                     _connectionService.DeviceChanged -= OnDeviceChanged;
                     // 显示警告

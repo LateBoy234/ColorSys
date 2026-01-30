@@ -10,7 +10,7 @@ namespace ColorSys.HardwareContract
 {
     public  interface IMeasureMent
     {
-       // IObservable<TestModel> TestStream { get; }   // 热数据流
+        event EventHandler<TestModel> DataReceived;
         Task<TestModel> RunTestAsync(CancellationToken token = default);
     }
 }
