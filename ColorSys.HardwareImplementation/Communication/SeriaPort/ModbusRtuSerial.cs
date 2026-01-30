@@ -18,11 +18,6 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
     {
         private readonly SerialParameters _p;
 
-        private readonly List<byte> _receiveBuffer = new();
-        private TaskCompletionSource<byte[]> _receiveTcs;
-        private readonly object _dataLock = new();
-        private CancellationTokenSource _receiveCts;
-
         public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
         public event EventHandler<byte[]> DataReceived;
         public bool SupportsPlugDetect => true;  // 支持 WMI 检测
@@ -32,8 +27,6 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
         public ModbusRtuSerial(SerialParameters p)
         {
             _p = p;
-            // 定时检测端口是否存在
-
         }
 
         private SerialPort? _port;
@@ -54,7 +47,7 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
                 await Task.Run(() => _port.Open());
                 _port.DataReceived += OnData;
 
-                // 2. 启动 WMI 监听（关键！）
+                // 2. 启动 WMI 监听
                 StartDeviceWatcher(_p.PortName);
 
                 StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs
@@ -65,7 +58,7 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
             }
             catch (Exception ex)
             {
-              //  _logger.LogError(ex, "Unexpected heartbeat failure");
+                //  _logger.LogError(ex, "Unexpected heartbeat failure");
                 throw;
             }
 
@@ -136,7 +129,7 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
                         }
                         catch (Exception ex)
                         {
-                           // _logger.LogError(ex, "Reconnect failed");
+                            // _logger.LogError(ex, "Reconnect failed");
                         }
                         finally
                         {
@@ -154,17 +147,6 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
             }
         }
 
-        // 线程安全的状态通知
-        private void InvokeStateChanged(ConnectionState state, string message, bool canReconnect = false)
-        {
-            var args = new ConnectionStateChangedEventArgs
-            {
-                State = state,
-                Message = message,
-                CanReconnect = canReconnect
-            };
-            StateChanged?.Invoke(this, args);
-        }
         public async Task<bool> ReconnectAsync()
         {
             await ConnectAsync();
@@ -217,69 +199,13 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
             // 简单示例：按 Modbus 长度拼帧
             var sp = (SerialPort)sender!;
             var len = sp.BytesToRead;
-            var buf = new byte[len];
-            sp.Read(buf, 0, len);
-
-            DataReceived?.Invoke(this, buf);
-        }
-        private static readonly RingBuffer s_buffer = new(512);
-        /// <summary>
-        /// 尝试提取帧
-        /// </summary>
-        /// <param name="raw"></param>
-        /// <param name="frame"></param>
-        /// <returns></returns>
-        public static bool TryExtractFrame(ReadOnlySpan<byte> raw, out byte[] frame)
-        {
-            frame = Array.Empty<byte>();
-
-            // 1. 缓冲区里先把新数据追加进来（线程安全用 ConcurrentQueue 或 RingBuffer）
-            s_buffer.Append(raw);   // 见下方 RingBuffer 实现
-
-            // 2. 循环找帧
-            while (s_buffer.Length > 4)   // 最小长度：地址+功能码+长度+CRC=5
+            if (len > 0)
             {
-                int head = 0;
-                ReadOnlySpan<byte> span = s_buffer.UnreadSpan;
-
-                // 2.1 先找头（Modbus-RTU 任意字节都可能像头，只能靠长度+CRC 验证）
-                byte addr = span[head];
-                byte func = span[head + 1];
-                byte len = span[head + 2];        // 仅对“读保持寄存器”响应有效
-
-                int frameLen = 3 + len + 2;         // 地址+功能码+数据+CRC16
-                if (s_buffer.Length < frameLen) return false; // 还不够，继续等
-
-                ReadOnlySpan<byte> candidate = span.Slice(head, frameLen);
+                var buf = new byte[len];
+                sp.Read(buf, 0, len);
+                DataReceived?.Invoke(this, buf);
             }
-            return false;
         }
-
-        private sealed class RingBuffer
-        {
-
-            private readonly object _bufferLock = new();
-
-            private readonly byte[] _buf;
-            private int _write;
-            private int _read;
-            public int Length => _write - _read;
-            public ReadOnlySpan<byte> UnreadSpan => _buf.AsSpan(_read, Length);
-            public RingBuffer(int size) => _buf = new byte[size];
-            public void Append(ReadOnlySpan<byte> data)
-            {
-                lock (_bufferLock)
-                {
-                    data.CopyTo(_buf.AsSpan(_write));
-                    _write += data.Length;
-                }
-              //  data.CopyTo(_buf.AsSpan(_write));
-                //_write += data.Length;
-            }
-            public void Skip(int cnt) => _read += cnt;
-        }
-
-
         public void Dispose()
         {
             if (_port?.IsOpen == true)
@@ -291,28 +217,18 @@ namespace ColorSys.HardwareImplementation.Communication.SeriaPort
             }
         }
 
-        public async Task<byte[]> SendAndReceiveAsync( byte[] request, int timeoutMs = 5000, CancellationToken token = default)
+        public Task SendAsync(byte[] frame)
         {
-            lock(_dataLock)
+            try
             {
-                if(_receiveTcs!=null&&!_receiveTcs.Task.IsCompleted)
-                {
-                    throw new InvalidOperationException("已有等待中的接收操作");
-                }
-                _receiveBuffer.Clear();
-                _receiveTcs = new TaskCompletionSource<byte[]>();
-                _receiveCts = CancellationTokenSource.CreateLinkedTokenSource(token);
-                _receiveCts.CancelAfter(timeoutMs);
+                _port.Write(frame, 0, frame.Length);
+                return Task.CompletedTask;
             }
-            //注册取消回调
-            using (_receiveCts.Token.Register(()=>_receiveTcs.TrySetCanceled()))
+            catch (Exception ex)
             {
-              await  _port.BaseStream.WriteAsync(request, 0, request.Length,token);
-               await _port.BaseStream.FlushAsync(token);
-                // 等待接收完成（由事件触发）
-                return await _receiveTcs.Task;
+                //  _logger.LogError(ex, "Unexpected heartbeat failure");
+                throw;
             }
-               
         }
 
         public bool IsConnected => _port?.IsOpen == true;

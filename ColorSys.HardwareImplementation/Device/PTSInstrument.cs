@@ -14,6 +14,10 @@ namespace ColorSys.HardwareImplementation.Device
     public class PTSInstrument : IDevice
     {
         private readonly ICommunication _comm;
+        private readonly ShannshiFrameAccumulator _accumulator;
+        private bool _isListening;
+
+        public event EventHandler<TestModel> DataReceived;
 
         // 存储解析出的仪器信息
         public string InstrumentName { get; private set; } = "";
@@ -30,6 +34,8 @@ namespace ColorSys.HardwareImplementation.Device
         public PTSInstrument(ICommunication comm)   // Autofac 自动注入
         {
             _comm = comm;
+            _accumulator = new ShannshiFrameAccumulator();
+            _isListening = false;
         }
         public DeviceType DeviceType => DeviceType.PTS;
 
@@ -46,7 +52,15 @@ namespace ColorSys.HardwareImplementation.Device
             }
 
             // 2. 发送 0xA1 指令查询状态并校验协议层连接
-            return await VerifyConnectionAsync();
+            bool connected = await VerifyConnectionAsync();
+            
+            if (connected)
+            {
+                // 启动数据监听
+                StartDataListener();
+            }
+            
+            return connected;
         }
 
         /// <summary>
@@ -55,12 +69,12 @@ namespace ColorSys.HardwareImplementation.Device
         private async Task<ShannshiResponse?> SendRequestAsync(byte cmdType, byte[]? data = null, int timeoutMs = 3000)
         {
             var tcs = new TaskCompletionSource<ShannshiResponse?>();
-            var accumulator = new ShannshiFrameAccumulator();
+            var tempAccumulator = new ShannshiFrameAccumulator();
 
             EventHandler<byte[]> handler = (s, rawData) =>
             {
-                accumulator.Append(rawData);
-                while (accumulator.ExtractFrame() is byte[] frame)
+                tempAccumulator.Append(rawData);
+                while (tempAccumulator.ExtractFrame() is byte[] frame)
                 {
                     if (ShannshiProtocol.TryParseResponse(frame, out var response))
                     {
@@ -185,8 +199,64 @@ namespace ColorSys.HardwareImplementation.Device
             }
         }
 
+        /// <summary>
+        /// 启动持续数据监听
+        /// </summary>
+        private void StartDataListener()
+        {
+            if (_isListening) return;
+            
+            _isListening = true;
+            _comm.DataReceived += OnDataReceived;
+        }
+
+        /// <summary>
+        /// 停止数据监听
+        /// </summary>
+        private void StopDataListener()
+        {
+            if (!_isListening) return;
+            
+            _isListening = false;
+            _comm.DataReceived -= OnDataReceived;
+        }
+
+        /// <summary>
+        /// 处理接收到的数据
+        /// </summary>
+        private void OnDataReceived(object sender, byte[] rawData)
+        {
+            try
+            {
+                _accumulator.Append(rawData);
+                
+                // 尝试解析完整帧
+                while (_accumulator.ExtractFrame() is byte[] frame)
+                {
+                    if (ShannshiProtocol.TryParseResponse(frame, out var response))
+                    {
+                        // 解析为测试数据并广播给UI
+                        var testData = ParseTestData(response.Data);
+                        if (testData != null)
+                        {
+                            // 在UI线程上触发事件
+                            Task.Run(() =>
+                            {
+                                DataReceived?.Invoke(this, testData);
+                            });
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"处理接收到的数据时发生异常: {ex.Message}");
+            }
+        }
+
         public void Dispose()
         {
+            StopDataListener();
             Comm.Dispose();
         }
 
@@ -199,6 +269,7 @@ namespace ColorSys.HardwareImplementation.Device
             {
                 // 这里根据 response.Data 解析测量数据
                 // 例如：解析 L*, a*, b* 等
+                System.Diagnostics.Debug.WriteLine(BitConverter.ToString(response.Data));
                 return ParseTestData(response.Data);
             }
 
@@ -208,8 +279,39 @@ namespace ColorSys.HardwareImplementation.Device
         private TestModel ParseTestData(byte[] data)
         {
             // 根据 0xA6 指令返回的协议格式进行解析
-            // 暂返回一个空模型示例
-            return new TestModel();
+            // 示例实现 - 根据实际协议调整解析逻辑
+            if (data == null || data.Length == 0)
+                return new TestModel();
+
+            // 假设数据包含 L*, a*, b* 值或其他颜色测量数据
+            // 这里需要根据实际的仪器协议来解析数据
+            var testModel = new TestModel
+            {
+                Name = "Measurement Data",
+                DateTime = DateTime.Now,
+                InstrumentSN = Model, // 使用仪器型号作为序列号
+                Material = "Sample Material",
+                OpticalStruct = "D/8"
+            };
+
+            // 根据实际协议解析数据
+            // 以下是一个示例解析逻辑（需要根据实际协议调整）
+            if (data.Length >= 6) // 假设有至少6个字节的数据
+            {
+                // 解析L*, a*, b*值（每个值占2个字节，大端序）
+                double lValue = (data[0] << 8 | data[1]) / 100.0; // 假设放大了100倍
+                double aValue = (data[2] << 8 | data[3]) / 100.0;
+                double bValue = (data[4] << 8 | data[5]) / 100.0;
+
+                testModel.DataValues = new double[] { lValue, aValue, bValue };
+            }
+            else
+            {
+                // 如果数据长度不足，创建默认数组
+                testModel.DataValues = new double[] { 0.0, 0.0, 0.0 };
+            }
+
+            return testModel;
         }
     }
 }
