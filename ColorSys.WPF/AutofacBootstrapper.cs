@@ -42,6 +42,7 @@ namespace ColorSys.WPF
                    .Where(t => t.IsAssignableTo<IDeviceStrategy>())
                    .As<IDeviceStrategy>()
                    .SingleInstance();
+
             builder.RegisterType<DeviceConnectionService>()
           .As<IDeviceConnectionService>()
           .SingleInstance();
@@ -56,14 +57,14 @@ namespace ColorSys.WPF
                    .SingleInstance();
 
             // ViewModels
-            builder.RegisterType<MainWindowViewmodel>().InstancePerDependency();
-            builder.RegisterType<LoginViewModel>().InstancePerDependency();
-            builder.RegisterType<ConnectViewModel>();
+            builder.RegisterType<MainWindowViewmodel>().InstancePerLifetimeScope();
+            builder.RegisterType<LoginViewModel>().InstancePerLifetimeScope();
+            builder.RegisterType<ConnectViewModel>().InstancePerLifetimeScope();
 
             // Views
             builder.RegisterType<MainWindow>().SingleInstance();
-            builder.RegisterType<LoginWindow>().InstancePerDependency();
-            builder.RegisterType<ConnectView>().InstancePerDependency();
+            builder.RegisterType<LoginWindow>().SingleInstance();
+            builder.RegisterType<ConnectView>().SingleInstance();
 
             return builder.Build();
         }
