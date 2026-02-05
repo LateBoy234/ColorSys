@@ -11,6 +11,7 @@ using ColorSys.HardwareImplementation.SystemConfig;
 using ColorSys.Permission;
 using ColorSys.WPF.Resources;
 using ColorSys.WPF.Views;
+using ColorSys.WPF.Views.UserControls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
@@ -36,6 +37,8 @@ namespace ColorSys.WPF.ViewModels
         private readonly IDeviceConnectionService _connectionService;
         private readonly IEnumerable<ICommStrategy> _commStrategies;
         private readonly IEnumerable<IDeviceStrategy> _deviceStrategies;
+
+       
 
         public MainWindowViewmodel(
             IAuthService auth, 
@@ -485,6 +488,10 @@ namespace ColorSys.WPF.ViewModels
         }
         #endregion
 
+        #region 图表展示区
+        [ObservableProperty]
+        private UserControl _triaxialChart;
+        #endregion
         public void Dispose()
         {
             // Unsubscribe from device data received event
