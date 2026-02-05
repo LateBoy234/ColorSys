@@ -410,25 +410,8 @@
                                          Padding="8,4" 
                                          Background="{DynamicResource MaterialDesignDivider}"
                                          FontWeight="Medium"/>
-                                
-                                <Viewbox Grid.Row="1" Margin="8">
-                                    <Canvas Width="240" Height="240">
-                                        <!-- Color circle placeholder -->
-                                        <Ellipse Width="240" Height="240">
-                                            <Ellipse.Fill>
-                                                <RadialGradientBrush>
-                                                    <GradientStop Color="White" Offset="0"/>
-                                                    <GradientStop Color="Red" Offset="0.25"/>
-                                                    <GradientStop Color="Yellow" Offset="0.5"/>
-                                                    <GradientStop Color="Blue" Offset="0.75"/>
-                                                    <GradientStop Color="Magenta" Offset="1"/>
-                                                </RadialGradientBrush>
-                                            </Ellipse.Fill>
-                                        </Ellipse>
-                                        <Line X1="0" Y1="120" X2="240" Y2="120" Stroke="Gray" StrokeThickness="1"/>
-                                        <Line X1="120" Y1="0" X2="120" Y2="240" Stroke="Gray" StrokeThickness="1"/>
-                                    </Canvas>
-                                </Viewbox>
+
+                                <ContentControl Grid.Row="1" Content="{Binding ColourDiagramContent}"/>
                             </Grid>
                         </materialDesign:Card>
                     </Grid>

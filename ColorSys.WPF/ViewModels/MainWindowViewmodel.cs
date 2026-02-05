@@ -21,6 +21,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Navigation;
 
 namespace ColorSys.WPF.ViewModels
@@ -69,11 +70,18 @@ namespace ColorSys.WPF.ViewModels
                     RefreshPermissions();
             };
             RefreshPermissions();
-            
+            InitiaColourDiagramContent();
+
             // 异步初始化配置并尝试自动连接
             _ = InitializeAsync();
         }
 
+        private void InitiaColourDiagramContent()
+        {
+            ColourDiagramContent = new ColourDiagramView();
+        }
+        [ObservableProperty]
+        private UserControl _colourDiagramContent;
         /// <summary>
         /// 初始化配置管理器并尝试自动连接
         /// </summary>
