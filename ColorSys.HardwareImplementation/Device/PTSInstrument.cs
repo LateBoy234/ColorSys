@@ -17,7 +17,7 @@ namespace ColorSys.HardwareImplementation.Device
         private readonly ShannshiFrameAccumulator _accumulator;
         private bool _isListening;
 
-        public event EventHandler<TestModel> DataReceived;
+        public event EventHandler<StandarModel> DataReceived;
 
         // 存储解析出的仪器信息
         public string InstrumentName { get; private set; } = "";
@@ -260,7 +260,7 @@ namespace ColorSys.HardwareImplementation.Device
             Comm.Dispose();
         }
 
-        public async Task<TestModel> RunTestAsync(CancellationToken token = default)
+        public async Task<StandarModel> RunTestAsync(CancellationToken token = default)
         {
             // 示例：执行测量命令 0xA6
             var response = await SendRequestAsync(0xA6);
@@ -273,19 +273,19 @@ namespace ColorSys.HardwareImplementation.Device
                 return ParseTestData(response.Data);
             }
 
-            return new TestModel(); // 或者抛出异常/返回错误状态
+            return new StandarModel(); // 或者抛出异常/返回错误状态
         }
 
-        private TestModel ParseTestData(byte[] data)
+        private StandarModel ParseTestData(byte[] data)
         {
             // 根据 0xA6 指令返回的协议格式进行解析
             // 示例实现 - 根据实际协议调整解析逻辑
             if (data == null || data.Length == 0)
-                return new TestModel();
+                return new StandarModel();
 
             // 假设数据包含 L*, a*, b* 值或其他颜色测量数据
             // 这里需要根据实际的仪器协议来解析数据
-            var testModel = new TestModel
+            var testModel = new StandarModel
             {
                 Name = "Measurement Data",
                 DateTime = DateTime.Now,

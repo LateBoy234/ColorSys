@@ -10,7 +10,7 @@ namespace ColorSys.HardwareContract
 {
     public  interface IMeasureMent
     {
-        event EventHandler<TestModel> DataReceived;
-        Task<TestModel> RunTestAsync(CancellationToken token = default);
+        event EventHandler<StandarModel> DataReceived;
+        Task<StandarModel> RunTestAsync(CancellationToken token = default);
     }
 }

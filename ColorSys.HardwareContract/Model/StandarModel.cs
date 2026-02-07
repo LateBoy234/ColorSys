@@ -7,22 +7,22 @@ using System.Threading.Tasks;
 
 namespace ColorSys.HardwareContract.Model
 {
-    public  class TestModel
+    public  class StandarModel
     {
-        public TestModel()
-        {
-            DateTime= DateTime.Now;
-        }
-        public TestModel(TestModel test)
-        {
-            ID=test.ID;
-            Name=test.Name;
-            DateTime=test.DateTime;
-            Material=test.Material;
-            OpticalStruct=test.OpticalStruct;
-            InstrumentSN=test.InstrumentSN;
-            DataValues=test.DataValues;
-        }
+        //public StandarModel()
+        //{
+        //    DateTime= DateTime.Now;
+        //}
+        //public StandarModel(StandarModel test)
+        //{
+        //    ID=test.ID;
+        //    Name=test.Name;
+        //    DateTime=test.DateTime;
+        //    Material=test.Material;
+        //    OpticalStruct=test.OpticalStruct;
+        //    InstrumentSN=test.InstrumentSN;
+        //    DataValues=test.DataValues;
+        //}
         
         /// <summary>
         /// 样品ID

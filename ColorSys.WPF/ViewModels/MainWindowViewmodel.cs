@@ -491,7 +491,7 @@ namespace ColorSys.WPF.ViewModels
         }
 
         // 处理从设备接收到的数据
-        private void OnDataReceivedFromDevice(object sender, TestModel testModel)
+        private void OnDataReceivedFromDevice(object sender, StandarModel testModel)
         {
             // 更新UI上的测量数据显示
             if (testModel.DataValues != null && testModel.DataValues.Length >= 3)
