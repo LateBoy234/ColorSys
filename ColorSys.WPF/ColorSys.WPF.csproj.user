@@ -2,10 +2,16 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup />
   <ItemGroup>
+    <Compile Update="Views\ColourDiagramView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Views\ConnectView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="Views\SettingView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Views\UserControls\ColorDiagramView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
