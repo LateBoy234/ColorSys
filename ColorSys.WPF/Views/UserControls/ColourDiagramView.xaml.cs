@@ -1,4 +1,6 @@
-﻿using System;
+﻿using ColorSys.WPF.ViewModels;
+using OxyPlot;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,7 +12,6 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using ColorSys.WPF.ViewModels;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
@@ -24,6 +25,13 @@ namespace ColorSys.WPF.Views
         public ColourDiagramView()
         {
             InitializeComponent();
+            // 绑定鼠标进入事件到 PlotCommands.HoverSnapTrack 命令
+            XyAxisPlotView.Controller = new PlotController();
+            XyAxisPlotView.Controller.BindMouseEnter(PlotCommands.HoverSnapTrack);
+
+            ZAxisPlotView.Controller = new PlotController();
+            ZAxisPlotView.Controller.BindMouseEnter(PlotCommands.HoverSnapTrack);
+
             this.DataContext =new  ColourDiagramViewModel();
         }
     }

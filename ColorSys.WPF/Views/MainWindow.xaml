@@ -238,11 +238,11 @@
                 <!-- Right Content Area -->
                 <Grid Grid.Column="1">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="5*"/>
                         <RowDefinition Height="4"/>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="5*"/>
                         <RowDefinition Height="4"/>
-                        <RowDefinition Height="280"/>
+                        <RowDefinition Height="11*"/>
                     </Grid.RowDefinitions>
 
                     <!-- Top DataGrid - Standards -->
@@ -329,11 +329,11 @@
                     <!-- Bottom - Charts Area -->
                     <Grid Grid.Row="4">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5*"/>
                             <ColumnDefinition Width="4"/>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="2*"/>
                             <ColumnDefinition Width="4"/>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5*"/>
                         </Grid.ColumnDefinitions>
 
                         <!-- Chart 1 - a*/b* Plot -->
@@ -366,33 +366,49 @@
                         <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
 
                         <!-- Chart 2 - Placeholder -->
-                        <materialDesign:Card Grid.Column="2">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
-                                </Grid.RowDefinitions>
-                                
-                                <TextBlock Text="颜色条" 
-                                         Padding="8,4" 
-                                         Background="{DynamicResource MaterialDesignDivider}"
-                                         FontWeight="Medium"/>
-                                
-                                <Border Grid.Row="1" Margin="8">
-                                    <Rectangle>
-                                        <Rectangle.Fill>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                                <GradientStop Color="Violet" Offset="0"/>
-                                                <GradientStop Color="Blue" Offset="0.17"/>
-                                                <GradientStop Color="Cyan" Offset="0.34"/>
-                                                <GradientStop Color="Lime" Offset="0.5"/>
-                                                <GradientStop Color="Yellow" Offset="0.67"/>
-                                                <GradientStop Color="Orange" Offset="0.84"/>
-                                                <GradientStop Color="Red" Offset="1"/>
-                                            </LinearGradientBrush>
-                                        </Rectangle.Fill>
-                                    </Rectangle>
-                                </Border>
+                        <materialDesign:Card Grid.Column="2" >
+                            <Grid >
+                                <GroupBox Header="Lab值输入">
+                                    <StackPanel>
+                                        <StackPanel Margin="10 5">
+                                            <TextBlock Text=" 标样值输入" FontSize="20" Margin=" 0 6 0 10" FontWeight="Bold"/>
+                                            <StackPanel Orientation="Horizontal" Margin=" 0 3 0 10" >
+                                                <Label Content="L:" Margin="5 0"/>
+                                                <TextBox Margin="5 0" Text="{Binding StandardLValue}" MinWidth="100"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin=" 0 3 0 10">
+                                                <Label Margin="5 0" Content="a:"/>
+                                                <TextBox Margin="5 0" Text="{Binding StandardaValue}" MinWidth="100"/>
+                                            </StackPanel>
+                                            <StackPanel  Orientation="Horizontal" Margin=" 0 3 0 10">
+                                                <Label Margin="5 0" Content="b:"/>
+                                                <TextBox Margin="5 0" Text="{Binding StandardbValue}" MinWidth="100"/>
+                                            </StackPanel>
+                                            <StackPanel  HorizontalAlignment="Center">
+                                                <Button Content="标样写入" Command="{Binding StdWriteCommand}" Margin="0 8" Width="90"/>
+                                            </StackPanel>
+                                            
+                                        </StackPanel>
+                                        <StackPanel Margin="10 5">
+                                            <TextBlock Text=" 试样值输入" FontSize="20" Margin=" 0 6 0 10" FontWeight="Bold"/>
+                                            <StackPanel Orientation="Horizontal" Margin=" 0 3 0 10">
+                                                <Label Content="L:" Margin="5 0"/>
+                                                <TextBox Margin="5 0" Text="{Binding TestLValue}" MinWidth="100"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin=" 0 3 0 10">
+                                                <Label Margin="5 0" Content="a:"/>
+                                                <TextBox Margin="5 0" Text="{Binding TestaValue}" MinWidth="100"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin=" 0 3 0 10">
+                                                <Label Margin="5 0" Content="b:"/>
+                                                <TextBox Margin="5 0" Text="{Binding TestbValue}" MinWidth="100"/>
+                                            </StackPanel>
+                                            <StackPanel  HorizontalAlignment="Center" >
+                                                <Button Content="试样写入" Command="{Binding TestWriteCommand}" Margin="0 8" Width="90"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </GroupBox>
                             </Grid>
                         </materialDesign:Card>
 
@@ -401,17 +417,10 @@
                         <!-- Chart 3 - Color Space -->
                         <materialDesign:Card Grid.Column="4">
                             <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
-                                </Grid.RowDefinitions>
+                                <GroupBox Header="LAB 色彩空间 " >
+                                    <ContentControl Grid.Row="1" Content="{Binding ColourDiagramContent}"/>
+                                </GroupBox>
                                 
-                                <TextBlock Text="色空间" 
-                                         Padding="8,4" 
-                                         Background="{DynamicResource MaterialDesignDivider}"
-                                         FontWeight="Medium"/>
-
-                                <ContentControl Grid.Row="1" Content="{Binding ColourDiagramContent}"/>
                             </Grid>
                         </materialDesign:Card>
                     </Grid>

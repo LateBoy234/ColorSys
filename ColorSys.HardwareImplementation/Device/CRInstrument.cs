@@ -40,7 +40,7 @@ namespace ColorSys.HardwareImplementation.Device
             if (connected)
             {
                 // 启动数据监听
-                StartDataListener();
+              //  StartDataListener();
             }
 
             return connected;
@@ -55,16 +55,16 @@ namespace ColorSys.HardwareImplementation.Device
             if (response != null && response.IsSuccess)
             {
                 System.Diagnostics.Debug.WriteLine("0xA1 指令响应成功，开始解析仪器信息...");
-                if (ParseInstrumentInfo(response.Data))
-                {
-                    System.Diagnostics.Debug.WriteLine("仪器信息解析成功，协议层连接已确认");
-                    return true;
-                }
-                else
-                {
-                    _comm.Dispose();
-                    System.Diagnostics.Debug.WriteLine("仪器信息解析失败");
-                }
+                //if (ParseInstrumentInfo(response.Data))
+                //{
+                //    System.Diagnostics.Debug.WriteLine("仪器信息解析成功，协议层连接已确认");
+                //    return true;
+                //}
+                //else
+                //{
+                //    _comm.Dispose();
+                //    System.Diagnostics.Debug.WriteLine("仪器信息解析失败");
+                //}
             }
             else
             {

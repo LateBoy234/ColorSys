@@ -1,0 +1,119 @@
+﻿<UserControl x:Class="ColorSys.WPF.Views.ColourDiagramView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:oxy="http://oxyplot.org/wpf"
+             xmlns:local="clr-namespace:ColorSys.WPF.Views"
+             xmlns:converters="clr-namespace:ColorSys.WPF.Converters"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <converters:LValueToPositionConverter x:Key="LValueToPositionConverter"/>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="10*"/>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="4*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- 图表区域 -->
+        <oxy:PlotView Model="{Binding XyAxisModel}" 
+                      Name="XyAxisPlotView"
+                      Grid.Column="0"
+                      Margin="5 10 10 10 "
+                      IsMouseWheelEnabled="True">
+            <oxy:PlotView.DefaultTrackerTemplate>
+                <ControlTemplate>
+                    <Border Background="White" 
+                    BorderBrush="Black" 
+                    BorderThickness="1" 
+                    CornerRadius="4"
+                    Padding="8">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Item.Tag.LabValueType, TargetNullValue='Unknown'}" 
+                                       FontWeight="Bold" 
+                                       Foreground="DarkBlue"/>
+                            <TextBlock>
+                        <Run Text="Name: "/>
+                        <Run Text="{Binding Item.Tag.SampleName, TargetNullValue='Unknown'}"/>
+                            </TextBlock>
+                            <TextBlock>
+                        <Run Text="a: "/>
+                        <Run Text="{Binding Item.Tag.AValue, StringFormat=F2, TargetNullValue='N/A'}"/>
+                            </TextBlock>
+                            <TextBlock>
+                        <Run Text="b: "/>
+                        <Run Text="{Binding Item.Tag.BValue, StringFormat=F2, TargetNullValue='N/A'}"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                </ControlTemplate>
+            </oxy:PlotView.DefaultTrackerTemplate>
+        </oxy:PlotView>
+        <!--亮度区域-->
+
+        <oxy:PlotView Model="{Binding ZAxisModel}" 
+                      Name="ZAxisPlotView"
+               Grid.Column="1"
+               Margin="5 10 10 10 "
+               IsMouseWheelEnabled="True">
+            <oxy:PlotView.DefaultTrackerTemplate>
+                <ControlTemplate>
+                    <Border Background="White" 
+                            BorderBrush="Black" 
+                            BorderThickness="1" 
+                            CornerRadius="4"
+                            Padding="8">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Item.Tag.LabValueType, TargetNullValue='Unknown'}" 
+                    FontWeight="Bold" 
+                    Foreground="DarkBlue"/>
+                            <TextBlock>
+             <Run Text="Name: "/>
+             <Run Text="{Binding Item.Tag.SampleName, TargetNullValue='Unknown'}"/>
+                            </TextBlock>
+                            <TextBlock>
+             <Run Text="L: "/>
+             <Run Text="{Binding Item.Tag.LValue, StringFormat=F2, TargetNullValue='N/A'}"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                </ControlTemplate>
+            </oxy:PlotView.DefaultTrackerTemplate>
+        </oxy:PlotView>
+
+        <!-- 说明面板 -->
+        <Border Grid.Column="2" 
+                Background="#f5f5f5" 
+                Margin="10" 
+                Padding="20"
+                CornerRadius="8">
+            <StackPanel>
+               
+                <TextBlock Text="L (明度): 0~100" Margin="0,5"/>
+                <TextBlock Text="a (红绿轴): -100~+100" Margin="0,5"/>
+                <TextBlock Text="b (黄蓝轴): -100~+100" Margin="0,5"/>
+                <TextBlock Text="C (饱和度): √(a²+b²)" Margin="0,5"/>
+                <TextBlock Text="H (色调): 0°~360°" Margin="0,5"/>
+
+                <Separator Margin="0,20"/>
+
+                <TextBlock Text="颜色区域" FontWeight="Bold" Margin="0,10"/>
+                <Border Background="Red"  Padding="8" Margin="0,5" CornerRadius="4">
+                    <TextBlock Text="红色区域 (+a, 0)" Foreground="White"/>
+                </Border>
+                <Border Background="Green"  Padding="8" Margin="0,5" CornerRadius="4">
+                    <TextBlock Text="绿色区域 (-a, 0)" Foreground="White"/>
+                </Border>
+                <Border Background="Yellow"  Padding="8" Margin="0,5" CornerRadius="4">
+                    <TextBlock Text="黄色区域 (0, +b)"/>
+                </Border>
+                <Border Background="Blue"   Padding="8" Margin="0,5" CornerRadius="4">
+                    <TextBlock Text="蓝色区域 (0, -b)" Foreground="White"/>
+                </Border>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

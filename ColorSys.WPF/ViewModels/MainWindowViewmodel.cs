@@ -11,9 +11,9 @@ using ColorSys.HardwareImplementation.SystemConfig;
 using ColorSys.Permission;
 using ColorSys.WPF.Resources;
 using ColorSys.WPF.Views;
-using ColorSys.WPF.Views.UserControls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -81,7 +81,9 @@ namespace ColorSys.WPF.ViewModels
 
         private void InitiaColourDiagramContent()
         {
-            ColourDiagramContent = new ColourDiagramView();
+            var colourDiagramView = new ColourDiagramView();
+            colourDiagramView.DataContext = new ColourDiagramViewModel();
+            ColourDiagramContent = colourDiagramView;
         }
         [ObservableProperty]
         private UserControl _colourDiagramContent;
@@ -553,5 +555,68 @@ namespace ColorSys.WPF.ViewModels
         }
 
 
+        #region LAB值写入和参数绑定
+        [ObservableProperty]
+        private double _standardLValue;
+        [ObservableProperty]
+        private double _standardaValue;
+        [ObservableProperty]
+        private double _standardbValue;
+        [ObservableProperty]
+        private double _testLValue;
+        [ObservableProperty]
+        private double _testaValue;
+        [ObservableProperty]
+        private double _testbValue;
+
+        // Reference to ColourDiagramViewModel
+        private ColourDiagramViewModel _colourDiagramViewModel;
+
+        [RelayCommand]
+        private void StdWrite()
+        {
+            // 获取当前的L*a*b*值
+            double lValue = StandardLValue;  // Use actual standard L value
+            double aValue = StandardaValue;
+            double bValue = StandardbValue;
+
+            // 发送消息，
+            WeakReferenceMessenger.Default.Send(new LabValueMode() { LValue = lValue, AValue = aValue, BValue = bValue, SampleName = "Std001", LabValueType = LabValueEnum.Standard });
+          
+        }
+        
+        [RelayCommand]
+        private void TestWrite()
+        {
+            // 获取当前的L*a*b*值
+            double lValue = TestLValue;  
+            double aValue = TestaValue;
+            double bValue = TestbValue;
+
+            // 发送消息，
+            WeakReferenceMessenger.Default.Send(new LabValueMode() { LValue=lValue,AValue=aValue,BValue=bValue,SampleName="test001",LabValueType=LabValueEnum.Test});
+        }
+        #endregion
+    }
+
+  //  public record LabValueMode(double LValue, double aValue, double bValue, string SampleName, LabValueEnum LabValueType);
+   public partial class LabValueMode:ObservableObject 
+    {
+        [ObservableProperty]
+        private double _lValue;
+        [ObservableProperty]
+        private double _aValue;
+        [ObservableProperty]
+        private double _bValue;
+        [ObservableProperty]
+        private string _sampleName;
+        [ObservableProperty]
+        private LabValueEnum _labValueType;
+    }
+
+    public enum LabValueEnum
+    {
+        Standard,
+        Test
     }
 }
