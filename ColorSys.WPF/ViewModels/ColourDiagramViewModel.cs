@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using OxyPlot;
 using OxyPlot.Annotations;
 using OxyPlot.Axes;
+using OxyPlot.Legends;
 using OxyPlot.Series;
 using System;
 using System.Drawing;
@@ -21,7 +22,7 @@ namespace ColorSys.WPF.ViewModels
             ZAxisModel = CreateBrightnessPlot();
             AddColorData(); // 添加颜色数据
             InitializeSampleSeries(); // 初始化样品数据系列
-                                      // 注册消息接收
+           // 注册消息接收
             WeakReferenceMessenger.Default.Register(this);
         }
 
@@ -39,6 +40,10 @@ namespace ColorSys.WPF.ViewModels
 
         #region ab颜色空间图
 
+        /// <summary>
+        /// 创建一个以原点为中心，分为四个象限的 ab 颜色空间图。X轴表示 a* 值，Y轴表示 b* 值。图中包含水平和垂直的分隔线，将图分成四个象限，分别代表不同的颜色区域。
+        /// </summary>
+        /// <returns></returns>
         public PlotModel CreateQuadrantPlot()
         {
             var plotModel = new PlotModel
@@ -46,6 +51,37 @@ namespace ColorSys.WPF.ViewModels
                 PlotAreaBorderThickness = new OxyThickness(0),
                 PlotAreaBorderColor = OxyColors.Transparent
             };
+
+            // 系列1：标样（蓝色菱形）
+            var standardSeries = new ScatterSeries
+            {
+                Title = "标样",                    // ← 图例显示的标题
+                MarkerType = MarkerType.Diamond,
+                MarkerFill = OxyColors.Red,
+                MarkerSize = 8
+            };
+
+            // 系列2：试样（绿色圆点）
+            var sampleSeries = new ScatterSeries
+            {
+                Title = "试样",                    // ← 图例显示的标题
+                MarkerType = MarkerType.Circle,
+                MarkerFill = OxyColors.Yellow,
+                MarkerSize = 8
+            };
+
+            plotModel.Series.Add(standardSeries);
+            plotModel.Series.Add(sampleSeries);
+
+            // 添加图例 - 显示在图表顶部中央（类似你的图片）
+            plotModel.Legends.Add(new Legend
+            {
+                LegendPosition = LegendPosition.TopCenter,      // 顶部中央
+                LegendPlacement = LegendPlacement.Outside,      // 图表外部
+                LegendOrientation = LegendOrientation.Horizontal, // 水平排列
+                LegendFontSize = 8,
+                LegendSymbolLength = 16                         // 符号长度
+            });
 
             // X轴 (a轴)
             var xAxis = new LinearAxis()
@@ -84,7 +120,6 @@ namespace ColorSys.WPF.ViewModels
 
             plotModel.Axes.Add(xAxis);
             plotModel.Axes.Add(yAxis);
-
             // 水平分隔线 Y=0
             plotModel.Annotations.Add(new LineAnnotation
             {
@@ -144,6 +179,11 @@ namespace ColorSys.WPF.ViewModels
             XyAxisModel.InvalidatePlot(true);
             ZAxisModel.InvalidatePlot(true);
         }
+
+        /// <summary>
+        /// 创建一个以原点为中心的 Lab 色轮图，包含 a* 和 b* 轴的颜色渐变。图像尺寸为 1000x1000 像素，内圆半径为 500 像素，使用径向渐变填充颜色。外圈为白色背景。该图将用于 ab 颜色空间的背景显示，帮助用户理解不同 a* 和 b* 值对应的颜色位置。
+        /// </summary>
+        /// <returns></returns>
         static MemoryStream CreateLabDiagramWithCoords()
         {
             const int W = 1000;
@@ -159,34 +199,73 @@ namespace ColorSys.WPF.ViewModels
                 g.Clear(Color.White);
                 // 2. 内圆 1000×1000 的径向渐变（Lab 色轮）
                 RectangleF innerRect = new RectangleF(Cx - InnerR, Cy - InnerR, InnerR * 2, InnerR * 2);
-                GraphicsPath path = new GraphicsPath();
-                path.AddEllipse(innerRect);
+                // ========== 32等分 ==========
+                int segments = 32;
+                float angleStep = 360f / segments;  // 每份11.25度
 
-                float tmp = (float)(Math.Sqrt(2.0) / 2.0 * InnerR);
-                PathGradientBrush brush = new PathGradientBrush(new[]
+              //  批量存储绘图数据，适合循环绘制色环
+                PointF[] points = new PointF[segments];
+                Color[] colors = new Color[segments];
+
+                for (int i = 0; i < segments; i++)
                 {
-            new PointF(Cx + InnerR, Cy),
-            new PointF(Cx + tmp,    Cy - tmp),
-            new PointF(Cx,          Cy - InnerR),
-            new PointF(Cx - tmp,    Cy - tmp),
-            new PointF(Cx - InnerR, Cy),
-            new PointF(Cx - tmp,    Cy + tmp),
-            new PointF(Cx,          Cy + InnerR),
-            new PointF(Cx + tmp,    Cy + tmp),
-        }, WrapMode.Tile);
-                brush.CenterPoint = new PointF(Cx, Cy);
-                brush.CenterColor = Color.White;
-                brush.SurroundColors = new Color[]
+                    float angleDeg = i * angleStep;   // 0, 11.25, 22.5, 33.75...
+                    float angleRad = (float)(angleDeg * Math.PI / 180.0);
+
+                    float x = Cx + InnerR * (float)Math.Cos(angleRad);
+                    float y = Cy - InnerR * (float)Math.Sin(angleRad);
+                    points[i] = new PointF(x, y);
+
+                    // HSL色相均匀分布：0-360度
+                    colors[i] = ColorFromHsl(angleDeg, 1.0f, 0.5f);
+                }
+                //路径渐变画刷
+                using (PathGradientBrush brush = new PathGradientBrush(points, WrapMode.Tile))
                 {
-            Color.Red, Color.Orange, Color.Yellow,
-            Color.GreenYellow, Color.Green, Color.Cyan,
-            Color.Blue, Color.Purple
-                };
-                g.FillEllipse(brush, innerRect);   // 只画内圆！
+                    brush.CenterPoint = new PointF(Cx, Cy);
+                    brush.CenterColor = Color.White;
+                    brush.SurroundColors = colors;
+
+                    g.FillEllipse(brush, innerRect);
+                }
             }
             return ConvertToImageSource(bmp);
         }
+        // HSL转RGB辅助方法
+        static Color ColorFromHsl(float hue, float saturation, float lightness)
+        {
+            // 确保 hue 在 0-360 范围内
+            hue = hue % 360;
+            if (hue < 0) hue += 360;
 
+            float c = (1 - Math.Abs(2 * lightness - 1)) * saturation;
+            float x = c * (1 - Math.Abs((hue / 60) % 2 - 1));
+            float m = lightness - c / 2;
+
+            float r, g, b;
+            int sector = (int)(hue / 60) % 6;
+
+            switch (sector)
+            {
+                case 0: r = c; g = x; b = 0; break;  // 0-60°: 红→黄
+                case 1: r = x; g = c; b = 0; break;  // 60-120°: 黄→绿
+                case 2: r = 0; g = c; b = x; break;  // 120-180°: 绿→青
+                case 3: r = 0; g = x; b = c; break;  // 180-240°: 青→蓝
+                case 4: r = x; g = 0; b = c; break;  // 240-300°: 蓝→紫
+                default: r = c; g = 0; b = x; break; // 300-360°: 紫→红
+            }
+
+            return Color.FromArgb(
+                255,                                    // Alpha (不透明)
+                (int)((r + m) * 255),                   // Red
+                (int)((g + m) * 255),                   // Green  
+                (int)((b + m) * 255));                  // Blue
+        }
+        /// <summary>
+        /// 将bitmap图转换成存储流数据
+        /// </summary>
+        /// <param name="src"></param>
+        /// <returns></returns>
         public static MemoryStream ConvertToImageSource(Bitmap src)
         {
             MemoryStream ms = new MemoryStream();
@@ -272,22 +351,28 @@ namespace ColorSys.WPF.ViewModels
         #endregion
 
         #region 亮度条
+
+        /// <summary>
+        /// 创建亮度条
+        /// </summary>
+        /// <returns></returns>
         public PlotModel CreateBrightnessPlot()
         {
             var plotModel = new PlotModel
             {
+                Title = "L*",
                 PlotAreaBorderThickness = new OxyThickness(0),
                 PlotAreaBorderColor = OxyColors.Transparent,
                 Padding = new OxyThickness(0)
             };
 
-            // X轴（隐藏）
+            // X轴
             var xAxis = new LinearAxis()
             {
                 Position = AxisPosition.Bottom,
                 Minimum = 0,
-                Maximum = 1,  // 窄一点
-                IsAxisVisible = false
+                Maximum = 1,  
+                IsAxisVisible = false//不显示刻度和数值
             };
 
             // Y轴 
@@ -335,7 +420,7 @@ namespace ColorSys.WPF.ViewModels
 
         private byte[] CreateGradientBitmap(int width, int height)
         {
-            using (var bmp = new System.Drawing.Bitmap(width, height))
+            using (var bmp = new Bitmap(width, height))
             {
                 for (int y = 0; y < height; y++)
                 {
@@ -346,7 +431,7 @@ namespace ColorSys.WPF.ViewModels
 
                     for (int x = 0; x < width; x++)
                     {
-                        bmp.SetPixel(x, y, System.Drawing.Color.FromArgb(invertedGray, invertedGray, invertedGray));
+                        bmp.SetPixel(x, y, Color.FromArgb(invertedGray, invertedGray, invertedGray));
                     }
                 }
 
@@ -419,8 +504,8 @@ namespace ColorSys.WPF.ViewModels
             // 标样数据系列 - 红色圆圈
             StandardSampleSeries = new ScatterSeries
             {
-                MarkerType = MarkerType.Circle,
-                MarkerSize = 5,
+                MarkerType = MarkerType.Diamond,
+                MarkerSize = 7,
                 MarkerFill = OxyColors.Red,
                 MarkerStroke = OxyColors.DarkRed,
                 MarkerStrokeThickness = 2,
@@ -441,8 +526,8 @@ namespace ColorSys.WPF.ViewModels
             // 标样L数据系列 - 红色圆圈
             StandardLSampleSeries = new ScatterSeries
             {
-                MarkerType = MarkerType.Circle,
-                MarkerSize = 5,
+                MarkerType = MarkerType.Diamond,
+                MarkerSize = 7,
                 MarkerFill = OxyColors.Red,
                 MarkerStroke = OxyColors.DarkRed,
                 MarkerStrokeThickness = 2,
