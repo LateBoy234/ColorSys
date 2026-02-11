@@ -73,7 +73,7 @@ namespace ColorSys.WPF.ViewModels
             plotModel.Series.Add(standardSeries);
             plotModel.Series.Add(sampleSeries);
 
-            // 添加图例 - 显示在图表顶部中央（类似你的图片）
+            // 添加图例 - 显示在图表顶部中央
             plotModel.Legends.Add(new Legend
             {
                 LegendPosition = LegendPosition.TopCenter,      // 顶部中央
